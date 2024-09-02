@@ -2,8 +2,6 @@
 title: Elissa's Website
 ---
 
-![Elissa's Headshot](/Users/eliss/Desktop/Elissa_Leung-Headshot.jpeg)
-
 Hello everyone, my name is Elissa!
 
 I am curious graduate student at Baruch College with a passion for problem solving and tackling challenges through new experiences. I'm currently pursuing a Master of Science in Business Analytics with a concentration in Data Analytics.
