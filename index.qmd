@@ -1,15 +1,15 @@
 ---
-title: Elissa's Website
+title: About Elissa
 ---
 
 Hello everyone, my name is Elissa!
 
-I am curious graduate student at Baruch College with a passion for problem solving and tackling challenges through new experiences. I'm currently pursuing a Master of Science in Business Analytics with a concentration in Data Analytics.
+I am curious graduate student at [Baruch College](https://www.baruch.cuny.edu/) with a passion for problem solving and tackling challenges through new experiences. I'm currently pursuing a Master of Science in Business Analytics with a concentration in Data Analytics in the [Zicklin School of Business](https://zicklin.baruch.cuny.edu/).
 
 I am also a recent graduate of Baruch College from the Baruch Scholars Honors program where I obtained a Bachelor of Arts in Mathematics and minored in Communication Studies.
 
 13 years ago, I discovered my first passion. Basketball has been a large part of my life for as long as I can remember. I have grown significantly since then, adapting to new team environments, learning to become a leader, and overcoming challenges. Four years ago, I was able to live out my dream of playing at the collegiate level for the Baruch Bearcats.
 
-Three summers ago, I tried something new and different. I had the opportunity of being a Microsoft Data Science Research fellow. Using R, I researched hands-on with large data sets, developed regression models, and created visualizations to analyze data. Through this opportunity I found a new passion for data science, a bridge between my interests in mathematics and programming.
+Three summers ago, I tried something new and different. I had the opportunity of being a Microsoft Data Science Research fellow. Using R, I researched hands-on with large data sets, developed regression models, and created visualizations to analyze data. By the end of this program, I successfully collaborated on a [research replication project](https://github.com/ElissaLeung/covid-nyc-2022-group-3/blob/main/README.md), analyzing the effects of socioeconomic and mobility factors on Covid-19 positivity rates in New York City. Through this opportunity I found a new passion for data science, a bridge between my interests in mathematics and programming.
 
 All these experiences have provided me with foundational skills to foster development in both my personal and professional growth. I hope to continue to explore all my passions and gain new experiences during my pursuit of data science and data analytics careers.
