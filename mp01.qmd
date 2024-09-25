@@ -227,7 +227,7 @@ sample_n(USAGE_clean, 1000) |>
                   options = list(pageLength = 5))
 ```
 
-## Data Analysis
+## Ridership Analysis
 
 ::: callout-tip
 ### Preliminary Analysis:
@@ -243,7 +243,7 @@ Below are some preliminary questions to explore with the `USAGE_clean` data tabl
 4.  How much did NYC subway ridership fall between April 2019 and April 2020?
 :::
 
-<Question 1>
+#### Question #1
 
 ```{r}
 
@@ -256,13 +256,19 @@ transit_agency_max_total_VRM <-
 
 transit_agency_max_total_VRM
 
+transit_agency_max_total_VRM_dist <- 
+  USAGE_clean |>
+  group_by(Agency) |>
+  summarize(total_VRM = sum(vehicle_revenue_miles)) |>
+  slice_max(total_VRM, n = 1) |>
+  pull(total_VRM)
+
+transit_agency_max_total_VRM_dist
 ```
 
-</Question 1>
+The transit agency that had the most total vehicle revenue miles in the sample was `{r} transit_agency_max_total_VRM`, with a total of `{r}transit_agency_max_total_VRM` vehicle revenue miles. Being that `{r} transit_agency_max_total_VRM` is one of the largest transit systems in the entire world and the largest in the US, it is unsurprising that this transit agency had the most total VRM in the data set.
 
-The transit agency that had the most total vehicle revenue miles in the sample was `{r} transit_agency_max_total_VRM` .
-
-#### **Question #2: What transit mode had the most total VRM in this sample?**
+#### **Question #2**
 
 ```{r}
 
@@ -274,25 +280,40 @@ transit_mode_max_total_VRM <-
   pull(Mode)
 
 transit_mode_max_total_VRM
+
+transit_mode_max_total_VRM_dist <- 
+  USAGE_clean |>
+  group_by(Mode) |>
+  summarize(total_VRM = sum(vehicle_revenue_miles)) |>
+  slice_max(total_VRM, n = 1) |>
+  pull(total_VRM)
+
+transit_mode_max_total_VRM_dist
 ```
 
-The transit mode with the most total vehicle revenue miles in this sample was `{r} transit_mode_max_total_VRM` .
+The transit mode with the most total vehicle revenue miles in this sample was the `{r} transit_mode_max_total_VRM`, having a total of `{r} transit_mode_max_total_VRM_dist` vehicle revenue miles. Buses make up a large portion of public transportation, especially in cities that don't have heavy rail trains like NYC, so it is reasonable that buses had the most vehicle revenue miles.
 
 #### Question #3: How many trips were taken on the NYC Subway (Heavy Rail) in May 2024?
 
 ```{r}
 
-total_trips_NYC_subway <- 
-  USAGE_clean |>
-  filter(Agency == "MTA New York City Transit", Mode == "Heavy Rail", year(month) == 2024, month(month) == 5) |>
-  summarize(total_trips = sum(unlinked_passenger_trips)) |>
-  pull(total_trips)
+total_trips_NYC_subway_2024 <- USAGE_clean |>
+  filter(Agency == "MTA New York City Transit", 
+         Mode == "Heavy Rail", 
+         year(month) == 2024) |>
+  group_by(mon = month(month)) |>
+  summarize(total_trips = sum(unlinked_passenger_trips))
 
-total_trips_NYC_subway
+total_trips_NYC_subway_2024
+
+
+total_trips_NYC_subway <- total_trips_NYC_subway_2024 |>
+  filter(mon == 5) |>
+  pull(total_trips)
 
 ```
 
-There were `{r} total_trips_NYC_subway` total trips taken on the New York City Subway in May 2024.
+There were `{r} total_trips_NYC_subway` total trips taken on the New York City Subway in May 2024. From the data table `total_trips_NYC_subway_2024`, the average monthly ridership from January 2024 to April 2024, was less than that of May 2024. This could be attributed to the season change, as the weather gets warmer from Winter into the Spring.
 
 #### Question #5: How much did NYC subway ridership fall between April 2019 and April 2020?
 
@@ -310,11 +331,11 @@ ridership_drop_NYC_april <- USAGE_clean |>
 ridership_drop_NYC_april
 ```
 
-From April 2019 to April 2020, the NYC subway ridership fell by `{r} ridership_drop_NYC_april`.
+From April 2019 to April 2020, the NYC subway ridership fell by `{r} ridership_drop_NYC_april`. The drastic drop in NYC subway ridership was likely due to the COVID-19 global pandemic which forced everyone to remain indoors and socially distance from others. So, it is understandable that such an extreme drop of `{r} ridership_drop_NYC_april` occurred.
 
-### Transit System Patterns Before/During COVID-19 Analysis:
+After analyzing the above statistics from the monthly ridership table, I wanted to find some additional information on the possible impact of COVID-19 on transit system ridership in the US.
 
-After analyzing the above statistics from the monthly ridership table, I wanted to find some additional information. **\[ADD MORE STUFF HERE\]**
+### Transit System Patterns Before and During COVID-19 Analysis
 
 Several years ago, in 2020, the world experienced a global outbreak of COVID-19, impacting local and international economies. This event encouraged social distancing and prevented any significant travel for citizens besides essential workers. I was curious to see how our national transit systems were affected by this global event. More specifically, I wanted to explore the ridership changes for the various metro areas included in the national ridership data set. I created a data frame with the total ridership of each metro area in this time frame, then calculated the percent change of ridership from 2019 to 2020. I expected to find a decrease in ridership in all the cities from 2019 to 2020 and wanted to explore which cities were negatively impacted the most and least.
 
@@ -387,9 +408,9 @@ ridership_Rome_GA_2019_2020 |>
 
 ```
 
-From this table above, I observed that there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)` %, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)` %.
+From this table above, there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)` %, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%.
 
-Additionally, I was curious to see which city's ridership was impacted the least.
+Subsequently, I was curious to see which city was affected the least.
 
 ```{r}
 
@@ -421,6 +442,99 @@ I curious about which mode of transportation contributed to the increase in ride
 
 ```{r}
 
+ridership_2019_2020 |>
+  filter(metro_area == "Port St. Lucie, FL" | metro_area == "Victoria, TX" | metro_area == "Las Cruces, NM")
+
+
+```
+
+```{r}
+
+# Victoria, TX
+
+df_tx <- USAGE_clean |>
+  filter(year(month) == 2019, 
+         metro_area == "Victoria, TX") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_1_tx <- USAGE_clean |>
+  filter(year(month) == 2020, 
+         metro_area == "Victoria, TX") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_combined_tx <- full_join(df_tx, df_1_tx) |>
+  mutate(year = year(month),
+         mon = month(month)) |>
+  select(-month) |>
+  pivot_wider(id_cols = c(mon),
+              names_from = year,
+              values_from = total_UPT) |>
+  arrange(mon)
+
+```
+
+```{r}
+
+# Port St. Lucie, FL
+
+df_fl <- USAGE_clean |>
+  filter(year(month) == 2019, 
+         metro_area == "Port St. Lucie, FL") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_1_fl <- USAGE_clean |>
+  filter(year(month) == 2020, 
+         metro_area == "Port St. Lucie, FL") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_combined_fl <- full_join(df_fl, df_1_fl) |>
+  mutate(year = year(month),
+         mon = month(month)) |>
+  select(-month) |>
+  pivot_wider(id_cols = c(mon),
+              names_from = year,
+              values_from = total_UPT)
+
+```
+
+```{r}
+
+# Las Cruces, NM
+
+df_nm <- USAGE_clean |>
+  filter(year(month) == 2019, 
+         metro_area == "Las Cruces, NM") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_1_nm <- USAGE_clean |>
+  filter(year(month) == 2020, 
+         metro_area == "Las Cruces, NM") |>
+  group_by(month) |>
+  summarize(total_UPT = sum(unlinked_passenger_trips)) |>
+  ungroup()
+
+df_combined_nm <- full_join(df_nm, df_1_nm) |>
+  mutate(year = year(month),
+         mon = month(month)) |>
+  select(-month) |>
+  pivot_wider(id_cols = c(mon),
+              names_from = year,
+              values_from = total_UPT)
+
+```
+
+```{r}
+
 ridership_Victoria_TX_2019 <- USAGE_clean |>
   filter(year(month) == 2019, metro_area == "Victoria, TX") |>
   group_by(Mode) |>
@@ -443,7 +557,9 @@ ridership_Victoria_TX_2019_2020
 
 There was an increase in ridership for all modes of transportation recorded in Victoria, TX. Bus had percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)`%. Commuter bus had a percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Commuter Bus") |> pull(percent_change)`%. While demand response had a percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%. All three modes of transportation contributed to the overall increase of ridership in Victoria, TX from 2019 to 2020.
 
-Being that New York City has one of the largest transit systems in the world and the largest in the United States, the Metropolitan Transit Authority (MTA), I was curious to see the changes the city's transit system experienced from 2019 to 2020.
+Although it seems unlikely that ridership would have increased from 2019 to 2020, it is possible that certain, more suburban, areas could have had an increase in ridership. One possibility is that people wanted to relocate from more densely populated cities into smaller cities, causing an increase in ridership in `{r} positive_change_cities`.
+
+Aside from the above three cities, the large majority of US city transit systems experienced a decrease in ridership. Being that New York City has the largest transit system in the United States, the Metropolitan Transit Authority (MTA), I was curious to further analyze the changes the city's transit system experienced from 2019 to 2020.
 
 ```{r}
 
@@ -470,11 +586,11 @@ ridership_NYC_2019_2020 |>
 
 ```
 
-# \[write something here about the NYC transit stuff\]
+As expected, all 5 modes of transportation (bus, bus rapid transit, commuter bus, demand response, and heavy rail) contributed to the overall decrease in ridership in NYC from 2019 to 2020. During this time, many companies transitioned to remote work allowing employees to work from home, avoiding travel and public transportation. Additionally, all students transitioned to remote learning allowing for virtual connection to classrooms. Both these factors contributed to the severe decrease in ridership in NYC's transit system.
 
-### Task #5
+## 2022 Financial and Ridership Analysis (Major Transit Systems)
 
-Preparing USAGE and FINANCIALS tables for merging.
+Since the focus of the remaining analysis is on the financials and ridership of the US major transit systems in 2022, the table `USAGE` must be filtered for data in 2022 and then merged with the `FINANCIALS` table from earlier. Additionally, to filter for major transit systems, the new table `USAGE_AND_FINANCIALS` table is filtered to only contain data with total unlinked passenger trips greater than 400,000.
 
 ```{r}
 
@@ -522,10 +638,6 @@ USAGE_AND_FINANCIALS <- left_join(USAGE_2022_ANNUAL,
 
 ```
 
-### Task #6
-
-Efficiency is optimizing productivity while minimizing wasted effort or expense. In this analysis, I take a look at various efficiency metrics to determine which United States transit system was the most **efficient** in 2022.
-
 ```{r}
 
 USAGE_AND_FINANCIALS_major_transit <- USAGE_AND_FINANCIALS |>
@@ -533,56 +645,88 @@ USAGE_AND_FINANCIALS_major_transit <- USAGE_AND_FINANCIALS |>
 
 ```
 
-#### Question #1
+Efficiency is optimizing productivity while minimizing wasted effort or expense. In the below analysis, I take a look at various efficiency metrics to determine which United States transit system was the most **efficient** in 2022.
 
-Which transit system (agency and mode) had the most UPT in 2022?
+::: callout-tip
+### Efficiency Analysis:
+
+1.  Which transit system (agency and mode) had the most UPT in 2022?
+
+2.  Which transit system (agency and mode) had the highest *farebox recovery*, defined as the highest ratio of Total Fares to Expenses?
+
+3.  Which transit system (agency and mode) has the lowest expenses per UPT?
+
+4.  Which transit system (agency and mode) has the highest total fares per UPT?
+
+5.  Which transit system (agency and mode) has the lowest expenses per VRM?
+
+6.  Which transit system (agency and mode) has the highest total fares per VRM?
+:::
+
+#### Question #1
 
 ```{r}
 
-transit_system_most_UPT <- USAGE_AND_FINANCIALS_major_transit |>
+transit_system_most_UPT_agency <- USAGE_AND_FINANCIALS_major_transit |>
   slice_max(UPT, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(transit_system_most_UPT)
+transit_system_most_UPT_agency
+
+transit_system_most_UPT_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  slice_max(UPT, n = 1) |>
+  pull(Mode)
+
+transit_system_most_UPT_mode
   
 
 ```
 
-The transit system with the most UPT in 2022 was `{r} transit_system_most_UPT`.
+The transit system with the highest amount of unlinked passenger trips (UPT) in 2022 was `{r} transit_system_most_UPT_agency` with the mode of transportation of `{r} transit_system_most_UPT_mode`.
 
 #### Question #2
 
-Which transit system (agency and mode) had the highest *farebox recovery*, defined as the highest ratio of Total Fares to Expenses?
-
 ```{r}
 
-highest_farebox_recovery <- USAGE_AND_FINANCIALS_major_transit |>
+highest_farebox_recovery_agency <- USAGE_AND_FINANCIALS_major_transit |>
   mutate(farebox_recovery = `Total Fares` / Expenses) |>
   slice_max(farebox_recovery, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(highest_farebox_recovery)
+highest_farebox_recovery_agency
+
+highest_farebox_recovery_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  mutate(farebox_recovery = `Total Fares` / Expenses) |>
+  slice_max(farebox_recovery, n = 1) |>
+  pull(Mode)
+
+highest_farebox_recovery_mode
 
 ```
 
-The transit system with the highest farebox recovery (ratio of total fares to expenses) in 2022 was `{r} highest_farebox_recovery`.
+The transit system with the highest farebox recovery (ratio of total fares to expenses) in 2022 was `{r} highest_farebox_recovery_agency` with the mode of transportation of `{r} highest_farebox_recovery_mode`.
 
 #### Question #3
 
-Which transit system (agency and mode) has the lowest expenses per UPT?
-
 ```{r}
 
-lowest_expenses_per_UPT <- USAGE_AND_FINANCIALS_major_transit |>
+lowest_expenses_per_UPT_agency <- USAGE_AND_FINANCIALS_major_transit |>
   mutate(expenses_per_UPT = Expenses / UPT) |>
   slice_min(expenses_per_UPT, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(lowest_expenses_per_UPT)
+lowest_expenses_per_UPT_agency
+
+lowest_expenses_per_UPT_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  mutate(expenses_per_UPT = Expenses / UPT) |>
+  slice_min(expenses_per_UPT, n = 1) |>
+  pull(Mode)
+
+lowest_expenses_per_UPT_mode
 
 ```
 
-The transit system that had the lowest expenses per UPT in 2022 was `{r} lowest_expenses_per_UPT`.
+The transit system that had the lowest expenses per UPT in 2022 was `{r} lowest_expenses_per_UPT_mode` from `{r} lowest_expenses_per_UPT_agency`.
 
 #### Question #4
 
@@ -590,49 +734,68 @@ Which transit system (agency and mode) has the highest total fares per UPT?
 
 ```{r}
 
-highest_fares_per_UPT <- USAGE_AND_FINANCIALS_major_transit |>
+highest_fares_per_UPT_agency <- USAGE_AND_FINANCIALS_major_transit |>
   mutate(fares_per_UPT = `Total Fares` / UPT) |>
   slice_max(fares_per_UPT, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(highest_fares_per_UPT)
+highest_fares_per_UPT_agency
+
+highest_fares_per_UPT_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  mutate(fares_per_UPT = `Total Fares` / UPT) |>
+  slice_max(fares_per_UPT, n = 1) |>
+  pull(Mode)
+
+highest_fares_per_UPT_mode
 
 ```
 
-`{r} highest_fares_per_UPT` had the highest total fares per UPT in 2022.
+`{r} highest_fares_per_UPT_agency` with the transit mode of `{r} highest_fares_per_UPT_mode` had the highest total fares per UPT in 2022.
 
 #### Question #5
 
-Which transit system (agency and mode) has the lowest expenses per VRM?
-
 ```{r}
 
-lowest_expenses_per_VRM <- USAGE_AND_FINANCIALS_major_transit |>
+lowest_expenses_per_VRM_agency <- USAGE_AND_FINANCIALS_major_transit |>
   mutate(expenses_per_VRM = Expenses / VRM) |>
   slice_min(expenses_per_VRM, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(lowest_expenses_per_VRM)
+lowest_expenses_per_VRM_agency
+
+lowest_expenses_per_VRM_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  mutate(expenses_per_VRM = Expenses / VRM) |>
+  slice_min(expenses_per_VRM, n = 1) |>
+  pull(Mode)
+
+lowest_expenses_per_VRM_mode
 
 ```
 
-The transit system with the lowest expenses per VRM in 2022 was `{r} lowest_expenses_per_VRM`.
+The transit system with the lowest expenses per vehicle revenue mile (VRM) in 2022 was `{r} lowest_expenses_per_VRM_mode` from `{r} lowest_expenses_per_VRM_agency`.
 
 #### Question #6
 
-Which transit system (agency and mode) has the highest total fares per VRM?
-
 ```{r}
 
-highest_fares_per_VRM <- USAGE_AND_FINANCIALS_major_transit |>
+highest_fares_per_VRM_agency <- USAGE_AND_FINANCIALS_major_transit |>
   mutate(fares_per_VRM = `Total Fares` / VRM) |>
   slice_max(fares_per_VRM, n = 1) |>
-  pull(Agency, Mode)
+  pull(Agency)
 
-print(highest_fares_per_VRM)
+highest_fares_per_VRM_agency
+
+highest_fares_per_VRM_mode <- USAGE_AND_FINANCIALS_major_transit |>
+  mutate(fares_per_VRM = `Total Fares` / VRM) |>
+  slice_max(fares_per_VRM, n = 1) |>
+  pull(Mode)
+
+highest_fares_per_VRM_mode
 
 ```
 
-Lastly, `{r} highest_fares_per_VRM` had the highest total fares per VRM in 2022.
+Lastly, `{r} highest_fares_per_VRM_mode` from `{r} highest_fares_per_VRM_agency` had the highest total fares per vehicle revenue mile (VRM) in 2022.
 
-Transit System efficiency is subjective and can be measured with different metrics (highest UPT, highest farebox recovery, lowest expenses per UPT, highest total fares per UPT, lowest expenses per VRM, and highest total fares per VRM). Based on the above information, using the farebox recovery ratio, I found that the most efficient transit system in the country in 2022 was the **Transit Authority of Central Kentucky** with a mode of transportation of **Vanpool**. This transit system was able to maximize its total fares while minimizing their expenses leading to the highest farebox recovery ratio.
+## Conclusion
+
+Transit system efficiency is subjective and can be measured with different metrics (highest UPT, highest farebox recovery, lowest expenses per UPT, highest total fares per UPT, lowest expenses per VRM, and highest total fares per VRM). Based on the above information, using the farebox recovery ratio, I found that the most efficient transit system in the country in 2022 was the \*\*`{r} highest_farebox_recovery_mode`\*\* from the \*\*`{r} highest_farebox_recovery_agency`\*\*. This transit system was able to maximize its total fares while minimizing their expenses leading to the highest farebox recovery ratio.
