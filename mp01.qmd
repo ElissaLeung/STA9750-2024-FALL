@@ -6,7 +6,7 @@ editor: visual
 
 ## Introduction
 
-For this project, the goal is to explore different characteristics of the major public transit systems in the United States, based on data from the [National Transit Database](https://www.transit.dot.gov/ntd). More specifically, the analysis includes data from the [2022 Fare Revenue](https://www.transit.dot.gov/ntd/data-product/2022-annual-database-fare-revenues) table, the most recent [Monthly Ridership](https://www.transit.dot.gov/ntd/data-product/monthly-module-adjusted-data-release) table, and the [2022 Operating Expenses](https://www.transit.dot.gov/ntd/data-product/2022-operating-expenses) reports. By analyzing various statistics like the total amount of trips, total vehicle miles traveled, total revenues and expenses by source, I hope to answer various questions and determine the most efficient transit system in the United States.
+For this project, the goal is to explore different characteristics of the major transit systems in the United States, based on data from the [National Transit Database](https://www.transit.dot.gov/ntd). More specifically, the analysis includes data from the [2022 Fare Revenue](https://www.transit.dot.gov/ntd/data-product/2022-annual-database-fare-revenues) table, the most recent [Monthly Ridership](https://www.transit.dot.gov/ntd/data-product/monthly-module-adjusted-data-release) table, and the [2022 Operating Expenses](https://www.transit.dot.gov/ntd/data-product/2022-operating-expenses) reports. By analyzing various statistics like the total amount of trips, total vehicle miles traveled, total revenues and expenses by source, I hope to answer various questions and determine the most efficient transit system in the United States.
 
 ## Data Cleaning
 
@@ -117,6 +117,9 @@ USAGE <- inner_join(TRIPS, MILES) |>
     mutate(`NTD ID` = as.integer(`NTD ID`))
 ```
 
+::: callout-note
+<div>
+
 The code below checks for possible lingering null values in the `USAGE` and `FINANCIALS` data frames before conducting analysis. An output of 0 for each of the data frames ensures that there are no null values in these data frames.
 
 ```{r}
@@ -125,11 +128,20 @@ USAGE |>
   is.na() |>
   sum()
 
+```
+
+```{r}
+
 FINANCIALS |>
   is.na() |>
   sum()
 
 ```
+
+</div>
+
+Since, both of these chunks produced an output of 0, there are no null values in these data tables that may alter calculations and analysis in the future.
+:::
 
 The `USAGE` table (shown below) provides transit system information including (but not limited to): agency, mode of transportation, total unlinked passenger trips, and total vehicle revenue miles.
 
@@ -141,18 +153,13 @@ library(DT)
 sample_n(USAGE, 1000) |> 
   mutate(month=as.character(month)) |> 
   arrange(`NTD ID`, month) |>
-  DT::datatable(rownames = FALSE, options = list(pageLength = 5))
-```
-
-```{r}
-
-library(dplyr)
-library(DT)
-library(lubridate)
-
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 5))
 ```
 
 ## Data Transformation
+
+Prior to analyzing data, it is important to make data tables as clear as possible to ensure clarity and accurate interpretation of results. So, renaming the column `UZA Name` to `metro_area` clarifies that the column contains the location (city, state) of the transit systems.
 
 ```{r}
 
@@ -161,13 +168,21 @@ USAGE <- USAGE |>
 
 ```
 
+Additionally, the `Mode` column contains some abbreviated codes, so converting these codes into understandable terms is helpful for future analysis.
+
+::: callout-note
+<div>
+
+The code below is used help to streamline the process of converting the codes into the terms, by showing the unique codes in the `Mode` column. Ultimately making the process of searching for these terms in the [National Transit Database (NTD) Glossary](https://www.transit.dot.gov/ntd/national-transit-database-ntd-glossary) much more efficient.
+
 ```{r}
 
 unique(USAGE$Mode)
 
 ```
 
-### Task #2
+</div>
+:::
 
 ```{r}
 
@@ -196,6 +211,8 @@ USAGE <- USAGE |>
 
 ```
 
+Furthermore, to clean up the data table even more, the removal of columns `NTD ID` and `3 Mode` could help clear unnecessary information before analysis. Renaming certain columns like `UPT` and `VRM` to `unlinked_passenger_trips` and `vehicle_revenue_miles` will also provide more clarity for interpretation. For this, a new data table `USAGE_clean` is created, shown below.
+
 ```{r}
 
 USAGE_clean <- USAGE |> 
@@ -206,12 +223,27 @@ USAGE_clean <- USAGE |>
 ```{r}
 sample_n(USAGE_clean, 1000) |> 
     mutate(month=as.character(month)) |> 
-    DT::datatable(rownames = FALSE)
+    DT::datatable(rownames = FALSE,
+                  options = list(pageLength = 5))
 ```
 
-### TASK #3
+## Data Analysis
 
-#### Question #1: What transit agency had the most total VRM in this sample?
+::: callout-tip
+### Preliminary Analysis:
+
+Below are some preliminary questions to explore with the `USAGE_clean` data table:
+
+1.  What transit agency had the most total VRM in our data set?
+
+2.  What transit mode had the most total VRM in our data set?
+
+3.  How many trips were taken on the NYC Subway (Heavy Rail) in May 2024?
+
+4.  How much did NYC subway ridership fall between April 2019 and April 2020?
+:::
+
+<Question 1>
 
 ```{r}
 
@@ -225,6 +257,8 @@ transit_agency_max_total_VRM <-
 transit_agency_max_total_VRM
 
 ```
+
+</Question 1>
 
 The transit agency that had the most total vehicle revenue miles in the sample was `{r} transit_agency_max_total_VRM` .
 
@@ -278,7 +312,7 @@ ridership_drop_NYC_april
 
 From April 2019 to April 2020, the NYC subway ridership fell by `{r} ridership_drop_NYC_april`.
 
-### Task #4:
+### Transit System Patterns Before/During COVID-19 Analysis:
 
 After analyzing the above statistics from the monthly ridership table, I wanted to find some additional information. **\[ADD MORE STUFF HERE\]**
 
