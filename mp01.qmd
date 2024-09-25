@@ -14,6 +14,13 @@ Before starting the analysis, the relevant data files need to be loaded and clea
 
 ```{r}
 
+if(!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+```
+
+```{r}
+
 if(!require("tidyverse")) install.packages("tidyverse")
 
 # Let's start with Fare Revenue
@@ -117,7 +124,7 @@ USAGE <- inner_join(TRIPS, MILES) |>
     mutate(`NTD ID` = as.integer(`NTD ID`))
 ```
 
-::: callout-note
+:::: callout-note
 <div>
 
 The code below checks for possible lingering null values in the `USAGE` and `FINANCIALS` data frames before conducting analysis. An output of 0 for each of the data frames ensures that there are no null values in these data frames.
@@ -141,7 +148,7 @@ FINANCIALS |>
 </div>
 
 Since, both of these chunks produced an output of 0, there are no null values in these data tables that may alter calculations and analysis in the future.
-:::
+::::
 
 The `USAGE` table (shown below) provides transit system information including (but not limited to): agency, mode of transportation, total unlinked passenger trips, and total vehicle revenue miles.
 
@@ -170,7 +177,7 @@ USAGE <- USAGE |>
 
 Additionally, the `Mode` column contains some abbreviated codes, so converting these codes into understandable terms is helpful for future analysis.
 
-::: callout-note
+:::: callout-note
 <div>
 
 The code below is used help to streamline the process of converting the codes into the terms, by showing the unique codes in the `Mode` column. Ultimately making the process of searching for these terms in the [National Transit Database (NTD) Glossary](https://www.transit.dot.gov/ntd/national-transit-database-ntd-glossary) much more efficient.
@@ -182,7 +189,7 @@ unique(USAGE$Mode)
 ```
 
 </div>
-:::
+::::
 
 ```{r}
 
@@ -218,13 +225,12 @@ Furthermore, to clean up the data table even more, the removal of columns `NTD I
 USAGE_clean <- USAGE |> 
   select(-`NTD ID`, -`3 Mode`) |> 
   rename(unlinked_passenger_trips = UPT, vehicle_revenue_miles = VRM)
-```
 
-```{r}
 sample_n(USAGE_clean, 1000) |> 
     mutate(month=as.character(month)) |> 
     DT::datatable(rownames = FALSE,
                   options = list(pageLength = 5))
+
 ```
 
 ## Ridership Analysis
@@ -293,9 +299,12 @@ transit_mode_max_total_VRM_dist
 
 The transit mode with the most total vehicle revenue miles in this sample was the `{r} transit_mode_max_total_VRM`, having a total of `{r} transit_mode_max_total_VRM_dist` vehicle revenue miles. Buses make up a large portion of public transportation, especially in cities that don't have heavy rail trains like NYC, so it is reasonable that buses had the most vehicle revenue miles.
 
-#### Question #3: How many trips were taken on the NYC Subway (Heavy Rail) in May 2024?
+#### Question #3
 
 ```{r}
+
+if(!require("lubridate")) install.packages("lubridate")
+library(lubridate)
 
 total_trips_NYC_subway_2024 <- USAGE_clean |>
   filter(Agency == "MTA New York City Transit", 
@@ -315,7 +324,7 @@ total_trips_NYC_subway <- total_trips_NYC_subway_2024 |>
 
 There were `{r} total_trips_NYC_subway` total trips taken on the New York City Subway in May 2024. From the data table `total_trips_NYC_subway_2024`, the average monthly ridership from January 2024 to April 2024, was less than that of May 2024. This could be attributed to the season change, as the weather gets warmer from Winter into the Spring.
 
-#### Question #5: How much did NYC subway ridership fall between April 2019 and April 2020?
+#### Question #4
 
 ```{r}
 
@@ -366,6 +375,8 @@ ridership_2019_2020 |>
 
 ```
 
+#### Greatest Decrease in Ridership from 2019-2020
+
 ```{r}
 
 greatest_ridership_drop_place <- ridership_2019_2020 |>
@@ -408,14 +419,17 @@ ridership_Rome_GA_2019_2020 |>
 
 ```
 
-From this table above, there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)` %, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%.
+From this table above, there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)`%, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%.
 
-Subsequently, I was curious to see which city was affected the least.
+#### Exploring Peculiar Increases in Ridership from 2019-2020
+
+Subsequently, I was curious to see which city was affected the least. When exploring this question, contrary to my assumption, there were multiple cities that actually **increased** their ridership from 2019 to 2020.
 
 ```{r}
 
 positive_change <- ridership_2019_2020 |>
-  filter(decrease == FALSE)
+  filter(decrease == FALSE) |>
+  arrange(desc(percent_change))
 
 positive_change_cities <- positive_change$metro_area
 
@@ -423,50 +437,31 @@ positive_change_cities
 
 ```
 
-```{r}
+The cities that presumably increased their ridership from 2019 to 2020 were `{r} positive_change_cities`.
 
-least_ridership_drop_place <- ridership_2019_2020 |>
-  slice_max(percent_change, n=1) |>
-  pull(metro_area)
+::: callout-important
+Although finding an increase in ridership from 2019 to 2020 is not entirely impossible, it was probably unlikely to occur. So, it was important to do additional investigation to figure out why these calculations came out to be positive.
+:::
 
-least_ridership_drop_percent <- ridership_2019_2020 |>
-  slice_max(percent_change, n=1) |>
-  pull(percent_change)
-
-least_ridership_drop_place
-```
-
-When exploring this question, contrary to my original assumption, I found that there were multiple cities that actually **increased** their ridership from 2019 to 2020. These cities were `{r} positive_change_cities`. The city with the lowest ridership drop (in other words, with the highest increase in ridership) was `{r} least_ridership_drop_place` with a percent change of +`{r} least_ridership_drop_percent`%.
-
-I curious about which mode of transportation contributed to the increase in ridership in `{r} least_ridership_drop_place` from 2019 to 2020.
+Upon further review of the data for Victoria, TX, it is apparent that no data was collected between January 2019 to August 2019, causing the total ridership for 2019 to be significantly lower than the totals from 2020.
 
 ```{r}
 
-ridership_2019_2020 |>
-  filter(metro_area == "Port St. Lucie, FL" | metro_area == "Victoria, TX" | metro_area == "Las Cruces, NM")
-
-
-```
-
-```{r}
-
-# Victoria, TX
-
-df_tx <- USAGE_clean |>
+tx_2019 <- USAGE_clean |>
   filter(year(month) == 2019, 
          metro_area == "Victoria, TX") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_1_tx <- USAGE_clean |>
+tx_2020 <- USAGE_clean |>
   filter(year(month) == 2020, 
          metro_area == "Victoria, TX") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_combined_tx <- full_join(df_tx, df_1_tx) |>
+tx_combined <- full_join(tx_2019, tx_2020) |>
   mutate(year = year(month),
          mon = month(month)) |>
   select(-month) |>
@@ -475,27 +470,42 @@ df_combined_tx <- full_join(df_tx, df_1_tx) |>
               values_from = total_UPT) |>
   arrange(mon)
 
+tx_combined |>
+  DT::datatable(rownames = FALSE)
+
 ```
 
 ```{r}
 
-# Port St. Lucie, FL
+tx_2019_total <- tx_combined$`2019` |>
+  replace(is.na(tx_combined$`2019`), 0) |>
+  sum()
+tx_2020_total <- tx_combined$`2020` |>
+  sum()
 
-df_fl <- USAGE_clean |>
+```
+
+The total for Victoria, TX in 2019 was `{r} tx_2019_total` compared to 2020 with a total of `{r} tx_2020_total`, a significant difference due to the missing data from 2019. Being that the information for 2019 is not entirely accessible, it is inconclusive whether the ridership in Victoria, TX increased or decreased from 2019 to 2020.
+
+Contrary to Victoria, TX, the data for Las Cruces, NM was not nearly as drastic. Although, there seems to be an inconsistency in the total ridership for January 2019.
+
+```{r}
+
+nm_2019 <- USAGE_clean |>
   filter(year(month) == 2019, 
-         metro_area == "Port St. Lucie, FL") |>
+         metro_area == "Las Cruces, NM") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_1_fl <- USAGE_clean |>
+nm_2020 <- USAGE_clean |>
   filter(year(month) == 2020, 
-         metro_area == "Port St. Lucie, FL") |>
+         metro_area == "Las Cruces, NM") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_combined_fl <- full_join(df_fl, df_1_fl) |>
+nm_combined <- full_join(nm_2019, nm_2020) |>
   mutate(year = year(month),
          mon = month(month)) |>
   select(-month) |>
@@ -503,27 +513,49 @@ df_combined_fl <- full_join(df_fl, df_1_fl) |>
               names_from = year,
               values_from = total_UPT)
 
+nm_combined |>
+  DT::datatable(rownames = FALSE)
+
 ```
 
 ```{r}
 
-# Las Cruces, NM
+jan_2019_nm <- nm_combined |>
+  filter(mon == 1) |>
+  pull(`2019`)
 
-df_nm <- USAGE_clean |>
+nm_combined_no_jan <- nm_combined |>
+  filter(mon != 1)
+
+nm_2019_min <- nm_combined_no_jan$`2019` |>
+  min()
+
+nm_2019_max <- nm_combined_no_jan$`2019` |>
+  max()
+
+```
+
+From the table above, Las Cruces, NM, experienced a total ridership of `{r} jan_2019_nm`, which seems highly unlikely given that the range of values for the remainder of 2019 were between `{r} nm_2019_min` and `{r} nm_2019_max`. Observing the remaining data points, there's a general increase in ridership from January 2019 until about January 2020, the Las Cruces, NM metro area experiences a steep ridership drop in April 2020, right around the peak of the pandemic. Overall, it seems that the ridership from January 2019 may have been undercounted, so it is unclear whether Las Cruces, NM experienced an increase or decrease in ridership from 2019 to 2020.
+
+Lastly, for Port St. Lucie, FL, there is less of a concern for the 2019 data as the monthly ridership totals seem to fluctuate in the range of 14,000 to 18,000. However, in 2020, there is a noticeable increase in ridership in October 2020.
+
+```{r}
+
+fl_2019 <- USAGE_clean |>
   filter(year(month) == 2019, 
-         metro_area == "Las Cruces, NM") |>
+         metro_area == "Port St. Lucie, FL") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_1_nm <- USAGE_clean |>
+fl_2020 <- USAGE_clean |>
   filter(year(month) == 2020, 
-         metro_area == "Las Cruces, NM") |>
+         metro_area == "Port St. Lucie, FL") |>
   group_by(month) |>
   summarize(total_UPT = sum(unlinked_passenger_trips)) |>
   ungroup()
 
-df_combined_nm <- full_join(df_nm, df_1_nm) |>
+fl_combined <- full_join(fl_2019, fl_2020) |>
   mutate(year = year(month),
          mon = month(month)) |>
   select(-month) |>
@@ -531,33 +563,31 @@ df_combined_nm <- full_join(df_nm, df_1_nm) |>
               names_from = year,
               values_from = total_UPT)
 
+fl_combined |>
+  DT::datatable(rownames = FALSE)
+
 ```
 
 ```{r}
 
-ridership_Victoria_TX_2019 <- USAGE_clean |>
-  filter(year(month) == 2019, metro_area == "Victoria, TX") |>
-  group_by(Mode) |>
-  summarize(total_ridership = sum(unlinked_passenger_trips)) |>
-  ungroup()
+sept_2020_fl <- fl_combined |>
+  filter(mon == 9) |>
+  pull(`2020`)
 
-ridership_Victoria_TX_2020 <- USAGE_clean |>
-  filter(year(month) == 2020, metro_area == "Victoria, TX") |>
-  group_by(Mode) |>
-  summarize(total_ridership = sum(unlinked_passenger_trips)) |>
-  ungroup()
+oct_2020_fl <- fl_combined |>
+  filter(mon == 10) |>
+  pull(`2020`)
 
-ridership_Victoria_TX_2019_2020 <- left_join(ridership_Victoria_TX_2019, ridership_Victoria_TX_2020, join_by(Mode)) |>
-  rename(total_ridership_2019 = total_ridership.x, total_ridership_2020 = total_ridership.y) |>
-  mutate(change_in_ridership = total_ridership_2020-total_ridership_2019, percent_change = round(((change_in_ridership / total_ridership_2019) * 100), digits = 2), decrease = (percent_change < 0))
+fl_increase <- oct_2020_fl - sept_2020_fl
 
-ridership_Victoria_TX_2019_2020
-
+fl_increase_percent <- round((fl_increase / sept_2020_fl) * 100, digits = 0)
 ```
 
-There was an increase in ridership for all modes of transportation recorded in Victoria, TX. Bus had percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)`%. Commuter bus had a percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Commuter Bus") |> pull(percent_change)`%. While demand response had a percent change of +`{r} ridership_Victoria_TX_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%. All three modes of transportation contributed to the overall increase of ridership in Victoria, TX from 2019 to 2020.
+In September 2019, Port St. Lucie, FL experienced a ridership total of `{r} sept_2020_fl`. In only one month, Port St. Lucie, FL increased its ridership by `{r} fl_increase` (or `{r} fl_increase_percent`%) to a total ridership in October 2020 of `{r} oct_2020_fl`. While this seems a little unbelievable, it is possible that during the latter part of 2020, people were beginning to travel domestically again. Perhaps more people were fleeing bigger urban areas for smaller cities like Port St. Lucie, FL causing a spike in ridership in October 2020 and beyond. In this case there is more believability especially since the ridership in Port St. Lucie, FL after October 2020 maintained this high total ridership fluctuating between 46,000 and 52,000 UPT.
 
-Although it seems unlikely that ridership would have increased from 2019 to 2020, it is possible that certain, more suburban, areas could have had an increase in ridership. One possibility is that people wanted to relocate from more densely populated cities into smaller cities, causing an increase in ridership in `{r} positive_change_cities`.
+Although in certain cases, it is unlikely that ridership would have increased from 2019 to 2020, it is possible that certain, more suburban, areas could have had an increase in ridership. One possibility is that people wanted to relocate from more densely populated cities into smaller cities, when travel became more accessible, causing an increase in ridership in cities like Port St. Lucie, FL.
+
+#### New York City Transit During COVID-19
 
 Aside from the above three cities, the large majority of US city transit systems experienced a decrease in ridership. Being that New York City has the largest transit system in the United States, the Metropolitan Transit Authority (MTA), I was curious to further analyze the changes the city's transit system experienced from 2019 to 2020.
 
@@ -586,7 +616,13 @@ ridership_NYC_2019_2020 |>
 
 ```
 
-As expected, all 5 modes of transportation (bus, bus rapid transit, commuter bus, demand response, and heavy rail) contributed to the overall decrease in ridership in NYC from 2019 to 2020. During this time, many companies transitioned to remote work allowing employees to work from home, avoiding travel and public transportation. Additionally, all students transitioned to remote learning allowing for virtual connection to classrooms. Both these factors contributed to the severe decrease in ridership in NYC's transit system.
+```{r}
+
+nyc_change <- round((sum(ridership_NYC_2019_2020$change_in_ridership) / sum(ridership_NYC_2019_2020$total_ridership_2019)) * 100, digits = 0)
+
+```
+
+As expected, all 5 modes of transportation (bus, bus rapid transit, commuter bus, demand response, and heavy rail) contributed to the overall `{r} nyc_change`% change in ridership in NYC from 2019 to 2020. During this time, many companies transitioned to remote work allowing employees to work from home and all students transitioned to virtual learning, avoiding travel and public transportation. Additionally, the fear of contracting and spreading the virus led more individuals who needed to travel to use personal vehicles rather than public transport. All of these factors contributed to the severe decrease in ridership in NYC's transit system.
 
 ## 2022 Financial and Ridership Analysis (Major Transit Systems)
 
@@ -799,3 +835,5 @@ Lastly, `{r} highest_fares_per_VRM_mode` from `{r} highest_fares_per_VRM_agency`
 ## Conclusion
 
 Transit system efficiency is subjective and can be measured with different metrics (highest UPT, highest farebox recovery, lowest expenses per UPT, highest total fares per UPT, lowest expenses per VRM, and highest total fares per VRM). Based on the above information, using the farebox recovery ratio, I found that the most efficient transit system in the country in 2022 was the `{r} highest_farebox_recovery_mode` from the `{r} highest_farebox_recovery_agency`. This transit system was able to maximize its total fares while minimizing their expenses leading to the highest farebox recovery ratio.
+
+Overall, the [National Transit Database](https://www.transit.dot.gov/ntd) provided a lot of useful and insightful data, allowing for a wide range of analysis. Through these data, it was interesting to explore historical transit data leading to thought-provoking insights as well as the various metrics to determine effective and efficient transportation in the United States. As the world continues to accelerate post-COVID, the major US public transit systems will continue to improve and create more efficient means of transportation for commuters around the nation.
