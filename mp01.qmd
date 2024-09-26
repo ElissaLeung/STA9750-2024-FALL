@@ -10,7 +10,7 @@ The major United States public transit systems contribute significantly to indiv
 
 ## Data Cleaning
 
-Before starting the analysis, the relevant data files need to be loaded and cleaned into data frames on R. Below consists of the code required to download the data files and create the relevant data frames by merging different tables. From the original data files four data frames are created: `FARES`, `EXPENSES`, `TRIPS`, and `MILES`. Following this, `FARES` and `EXPENSES` are merged into the `FINANCIALS` data frame and `TRIPS` and `MILES` are merged into the `USAGE` data frame. From this point forward, only the `USAGE` and `FINANCIALS` data frame will be necessary to conduct the analysis.
+Before starting the analysis, the relevant data files need to be loaded and cleaned into data frames on R. Below consists of the code required to download the data files and create the relevant data frames by merging different tables. From the original data files four data frames are created: `FARES`, `EXPENSES`, `TRIPS`, and `MILES`. Following this, `FARES` and `EXPENSES` are merged into the `FINANCIALS` data frame and `TRIPS` and `MILES` are merged into the `USAGE` data frame. From this point forward, only the `USAGE` and `FINANCIALS` data frames will be necessary to conduct the analysis.
 
 ```{r}
 
@@ -166,7 +166,7 @@ sample_n(USAGE, 1000) |>
 
 ## Data Transformation
 
-Prior to analyzing data, it is important to make data tables as clear as possible to ensure clarity and accurate interpretation of results. So, renaming the column `UZA Name` to `metro_area` clarifies that the column contains the location (city, state) of the transit systems.
+Prior to analyzing data, it is important to make data tables as clear as possible to ensure clarity and accurate interpretation of results. So, renaming the column `UZA Name` to `metro_area` clarifies that this column contains the location (city, state) of the transit systems.
 
 ```{r}
 
@@ -272,7 +272,7 @@ transit_agency_max_total_VRM_dist <-
 transit_agency_max_total_VRM_dist
 ```
 
-The transit agency that had the most total vehicle revenue miles in the sample was `{r} transit_agency_max_total_VRM`, with a total of `{r} transit_agency_max_total_VRM_dist` vehicle revenue miles. Being that the `{r} transit_agency_max_total_VRM` is one of the largest transit systems in the entire world and the largest in the US, it is unsurprising that this transit agency had the most total VRM in the data set.
+The transit agency that had the most total vehicle revenue miles in the sample was `{r} transit_agency_max_total_VRM`, with a total of about `{r} round(transit_agency_max_total_VRM_dist / 1e9, digits = 2)` billion vehicle revenue miles. Being that the `{r} transit_agency_max_total_VRM` is one of the largest transit systems in the entire world and the largest in the US, it is unsurprising that this transit agency had the most total VRM in the data set.
 
 #### Question #2
 
@@ -297,7 +297,7 @@ transit_mode_max_total_VRM_dist <-
 transit_mode_max_total_VRM_dist
 ```
 
-The transit mode with the most total vehicle revenue miles in this sample was the `{r} transit_mode_max_total_VRM`, having a total of `{r} transit_mode_max_total_VRM_dist` vehicle revenue miles. Buses make up a large portion of public transportation, especially in cities that don't have heavy rail trains like NYC, so it is reasonable that buses had the most vehicle revenue miles.
+The transit mode with the most total vehicle revenue miles in this sample was the `{r} transit_mode_max_total_VRM`, having a total of roughly `{r} round(transit_mode_max_total_VRM_dist / 1e9, digits = 2)` billion vehicle revenue miles. Buses make up a large portion of public transportation, especially in cities that don't have heavy rail trains like NYC, so it is reasonable that buses had the most vehicle revenue miles.
 
 #### Question #3
 
@@ -322,7 +322,7 @@ total_trips_NYC_subway <- total_trips_NYC_subway_2024 |>
 
 ```
 
-There were `{r} total_trips_NYC_subway` total trips taken on the New York City Subway in May 2024. From the data table `total_trips_NYC_subway_2024`, the average monthly ridership from January 2024 to April 2024, was less than that of May 2024. This could be attributed to the season change, as the weather gets warmer from Winter into the Spring.
+There were about `{r} round(total_trips_NYC_subway / 1e6, digits = 2)` million total trips taken on the New York City Subway in May 2024. From the data table `total_trips_NYC_subway_2024`, it is evident that the average monthly ridership from January 2024 to April 2024, was less than the total trips in May 2024. This could be due to the season change, as the weather gets warmer from Winter into the Spring.
 
 #### Question #4
 
@@ -340,7 +340,7 @@ ridership_drop_NYC_april <- USAGE_clean |>
 ridership_drop_NYC_april
 ```
 
-From April 2019 to April 2020, the NYC subway ridership fell by `{r} ridership_drop_NYC_april`. The drastic drop in NYC subway ridership was likely due to the COVID-19 global pandemic which forced everyone to remain indoors and socially distance from others. So, it is understandable that such an extreme drop of `{r} ridership_drop_NYC_april` occurred.
+From April 2019 to April 2020, the NYC subway ridership fell by approxmately `{r} round(ridership_drop_NYC_april / 1e6, digits = 2)` million. The drastic drop in NYC subway ridership was likely due to the COVID-19 global pandemic which forced everyone to remain indoors and socially distance from others. So, it is understandable that such an extreme drop of `{r} round(ridership_drop_NYC_april / 1e6, digits = 2)` million occurred.
 
 After analyzing the above statistics from the monthly ridership table, I wanted to find some additional information on the possible impact of COVID-19 on transit system ridership in the US.
 
@@ -419,11 +419,11 @@ ridership_Rome_GA_2019_2020 |>
 
 ```
 
-From this table above, there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)`%, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%.
+From this table above, there were only two recorded modes of transportation from `{r} greatest_ridership_drop_place`: bus and demand response. The bus ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Bus") |> pull(percent_change)`%, while the demand response ridership changed by `{r} ridership_Rome_GA_2019_2020 |> filter(Mode == "Demand Response") |> pull(percent_change)`%. The sharp decline in bus ridership could be due to the fear of taking public mass transit. Individuals needing to travel locally would probably have preferred utilizing personal vehicles. Overall, the decrease in ridership was typical for majority of metropolitan areas with transit systems.
 
 #### Exploring Peculiar Increases in Ridership from 2019-2020
 
-Subsequently, I was curious to see which city was affected the least. When exploring this question, contrary to my assumption, there were multiple cities that actually **increased** their ridership from 2019 to 2020.
+Subsequently, I was also curious to see which city was affected the least. When exploring this question, contrary to my assumption, there were a few cities that actually **increased** their ridership from 2019 to 2020.
 
 ```{r}
 
@@ -480,14 +480,19 @@ tx_combined |>
 tx_2019_total <- tx_combined$`2019` |>
   replace(is.na(tx_combined$`2019`), 0) |>
   sum()
+
+tx_2019_total
+
 tx_2020_total <- tx_combined$`2020` |>
   sum()
 
+tx_2020_total
+
 ```
 
-The total for Victoria, TX in 2019 was `{r} tx_2019_total` compared to 2020 with a total of `{r} tx_2020_total`, a significant difference due to the missing data from 2019. Being that the information for 2019 is not entirely accessible, it is inconclusive whether the ridership in Victoria, TX increased or decreased from 2019 to 2020.
+The total for Victoria, TX in 2019 was `{r} prettyNum(tx_2019_total, big.mark = ",", scientific = FALSE)` compared to 2020 with a total of `{r} prettyNum(tx_2020_total, big.mark = ",", scientific = FALSE)`, a significant difference due to the missing data from 2019. Being that the information for 2019 is not entirely accessible, it is inconclusive whether the ridership in Victoria, TX increased or decreased from 2019 to 2020.
 
-Contrary to Victoria, TX, the data for Las Cruces, NM was not nearly as drastic. Although, there seems to be an inconsistency in the total ridership for January 2019.
+Contrary to Victoria, TX, the data for Las Cruces, NM was not nearly as drastic. Although, there seems to be an unexpected value for the total ridership in January 2019.
 
 ```{r}
 
@@ -535,7 +540,7 @@ nm_2019_max <- nm_combined_no_jan$`2019` |>
 
 ```
 
-From the table above, Las Cruces, NM, experienced a total ridership of `{r} jan_2019_nm` in January 2019, which seems highly unlikely given that the range of values for the remainder of 2019 were between `{r} nm_2019_min` and `{r} nm_2019_max`. Observing the remaining data points, there's a general increase in ridership from January 2019 until about January 2020. The Las Cruces, NM metro area experiences a steep ridership drop in April 2020, right around the peak of the pandemic. Overall, it seems that the ridership from January 2019 may have been undercounted, so it is unclear whether Las Cruces, NM experienced an increase or decrease in ridership from 2019 to 2020.
+From the table above, Las Cruces, NM, experienced a total ridership of `{r} jan_2019_nm` in January 2019, which seems highly unlikely given that the range of values for the remainder of 2019 were between `{r} prettyNum(nm_2019_min, big.mark = ",", scientific = FALSE)` and `{r} prettyNum(nm_2019_max, big.mark = ",", scientific = FALSE)`. Observing the remaining data points, there's a general increase in ridership from January 2019 until about January 2020. The Las Cruces, NM metro area experiences a steep ridership drop in April 2020, right around the peak of the pandemic. Overall, it seems that the ridership from January 2019 may have been undercounted, so it is unclear whether Las Cruces, NM experienced an increase or decrease in ridership from 2019 to 2020.
 
 Lastly, for Port St. Lucie, FL, there is less of a concern for the 2019 data as the monthly ridership totals seem to fluctuate in the range of 14,000 to 18,000. However, in 2020, there is a noticeable increase in ridership in October 2020.
 
@@ -583,7 +588,7 @@ fl_increase <- oct_2020_fl - sept_2020_fl
 fl_increase_percent <- round((fl_increase / sept_2020_fl) * 100, digits = 0)
 ```
 
-In September 2020, Port St. Lucie, FL experienced a ridership total of `{r} sept_2020_fl`. In only one month, Port St. Lucie, FL increased its ridership by `{r} fl_increase` (or `{r} fl_increase_percent`%) to a total ridership in October 2020 of `{r} oct_2020_fl`. While this seems a little unbelievable, it is possible that during the latter part of 2020, people were beginning to travel domestically again. Perhaps more people were fleeing bigger urban areas for smaller cities like Port St. Lucie, FL causing a spike in ridership in October 2020 and beyond. In this case there is more believability especially since the ridership in Port St. Lucie, FL after October 2020 maintained this high total ridership fluctuating between 46,000 and 52,000 UPT.
+In September 2020, Port St. Lucie, FL experienced a ridership total of `{r} prettyNum(sept_2020_fl, big.mark = ",", scientific=FALSE)`. In only one month, Port St. Lucie, FL increased its ridership by `{r} prettyNum(fl_increase, big.mark = ",", scientific = FALSE)` (or `{r} fl_increase_percent`%) to a total ridership in October 2020 of `{r} prettyNum(oct_2020_fl, big.mark = ",", scientific = FALSE)`. While this seems a little unbelievable, it is possible that during the latter part of 2020, people were beginning to travel domestically again. Perhaps more people were fleeing bigger urban areas for smaller cities like Port St. Lucie, FL causing a spike in ridership in October 2020 and beyond. This case seems more reasonable, especially since the ridership in Port St. Lucie, FL after October 2020 maintained this high total ridership fluctuating between 46,000 and 52,000 UPT.
 
 Although in most cases, it is unlikely that ridership would have increased from 2019 to 2020, it is possible that certain, more suburban, areas could have had an increase in ridership. One possibility is that people wanted to relocate from more densely populated cities into smaller cities, when travel became more accessible, causing an increase in ridership in cities like Port St. Lucie, FL.
 
@@ -624,7 +629,7 @@ nyc_change
 
 ```
 
-As expected, all 5 modes of transportation (bus, bus rapid transit, commuter bus, demand response, and heavy rail) contributed to the overall `{r} nyc_change`% change in ridership in NYC from 2019 to 2020. During this time, many companies transitioned to remote work allowing employees to work from home and all students transitioned to virtual learning, avoiding travel and public transportation. Additionally, the fear of contracting and spreading the virus led more individuals who needed to travel to use personal vehicles rather than public transport. All of these factors contributed to the severe decrease in ridership in NYC's transit system.
+As expected, all 5 modes of transportation (bus, bus rapid transit, commuter bus, demand response, and heavy rail) contributed to the overall `{r} nyc_change`% change in ridership in NYC from 2019 to 2020. During this time, many companies transitioned to remote work allowing employees to work from home and all students transitioned to virtual learning, avoiding travel and public transportation. Additionally, the fear of contracting and spreading the virus led more individuals who needed to travel to use personal vehicles rather than public transport. All of these factors contributed to the severe decrease in ridership in NYC's transit system in 2020.
 
 ```{r}
 
@@ -660,13 +665,15 @@ percentage_positive <- ridership_2020_2023 |>
   filter(increase == TRUE) |>
   pull(percent)
 
+percentage_positive
+
 ```
 
 Overall, it was interesting to observe the varying effects that COVID-19 had on US transit systems across different metropolitan areas. Each city reacted and adjusted to the global pandemic differently, which led to different patterns of changes in their respective transit systems. Although most transit systems experienced a severe drop in ridership during 2020, it is evident that most transit systems have progressed in the right direction, with approximately `{r} percentage_positive`% of cities demonstrating an increase in ridership from 2020 to 2023.
 
 ## 2022 Financial and Ridership Analysis (Major Transit Systems)
 
-Since the focus of the remaining analysis is on the financials and ridership of the US major transit systems in 2022, the table `USAGE` must be filtered for data in 2022 and then merged with the `FINANCIALS` table from earlier. Additionally, to filter for major transit systems, the new table `USAGE_AND_FINANCIALS` table is filtered to only contain data with total unlinked passenger trips greater than 400,000.
+Since the focus of the remaining analysis is on the financials and ridership of the US major transit systems in 2022, the table `USAGE` must be filtered for data in 2022 and then merged with the `FINANCIALS` table from earlier. Additionally, to filter for major transit systems, the new table `USAGE_AND_FINANCIALS` is filtered to only contain data with total unlinked passenger trips greater than 400,000.
 
 ```{r}
 
@@ -768,7 +775,7 @@ transit_system_most_UPT <- USAGE_AND_FINANCIALS_major_transit |>
 transit_system_most_UPT
 ```
 
-In 2022, the transit system with the highest amount of unlinked passenger trips (UPT) of `{r} transit_system_most_UPT` was the `{r} transit_system_most_UPT_agency` with the mode of transportation of `{r} transit_system_most_UPT_mode`. Since `{r} transit_system_most_UPT_agency` subway system is the largest in the US, it is clear that they would have the highest UPT among all major US transit systems.
+In 2022, the transit system with the highest amount of unlinked passenger trips (UPT) of `{r} round(transit_system_most_UPT / 1e9, digits = 2)` billion was the `{r} transit_system_most_UPT_agency` with the mode of transportation of `{r} transit_system_most_UPT_mode`. Since `{r} transit_system_most_UPT_agency` subway system is the largest in the US, it is clear that they would have the highest UPT among all major US transit systems.
 
 #### Question #2
 
@@ -797,7 +804,7 @@ highest_farebox_recovery
 
 ```
 
-The transit system with the highest farebox recovery of `{r} highest_farebox_recovery` (ratio of total fares to expenses) in 2022 was `{r} highest_farebox_recovery_agency` with the mode of transportation of `{r} highest_farebox_recovery_mode`. It is interesting to see that the transit system with the highest farebox recovery is not a popular agency or mode most people would attribute "public transportation" as. However, it does show that efficient transit systems can exist anywhere in the US on any mode of transit.
+The transit system with the highest farebox recovery of `{r} round(highest_farebox_recovery, digits = 2)` (ratio of total fares to expenses) in 2022 was `{r} highest_farebox_recovery_agency` with the mode of transportation of `{r} highest_farebox_recovery_mode`. It is interesting to see that the transit system with the highest farebox recovery is not a popular agency or mode most people would attribute "public transportation" as. However, it does show that efficient transit systems can exist anywhere in the US on any mode of transit.
 
 #### Question #3
 
@@ -826,7 +833,7 @@ lowest_expenses_per_UPT
 
 ```
 
-The transit system that had the lowest expenses per UPT (`{r} lowest_expenses_per_UPT`) in 2022 was `{r} lowest_expenses_per_UPT_mode` from `{r} lowest_expenses_per_UPT_agency`. Although we do not have all the information about the cost of university transit, it is likely that such a large university is transporting sizeable amounts of students daily which could contribute to its low expense per UPT.
+The transit system that had the lowest expenses per UPT (`{r} round(lowest_expenses_per_UPT, digits = 2)`) in 2022 was `{r} lowest_expenses_per_UPT_mode` from `{r} lowest_expenses_per_UPT_agency`. Although we do not have all the information about the cost of university transit, it is likely that such a large university is transporting sizeable amounts of students daily which could contribute to its low expense per UPT.
 
 #### Question #4
 
@@ -855,7 +862,7 @@ highest_fares_per_UPT
 
 ```
 
-`{r} highest_fares_per_UPT_agency` with the transit mode of `{r} highest_fares_per_UPT_mode` had the highest total fares per UPT of `{r} highest_fares_per_UPT` in 2022. Since `{r} highest_fares_per_UPT_agency` is a commuter bus company that provides coach bus transportation, charter bus and tour bus options, it is likely that passengers are charged higher fares, leading to a high total fare per UPT.
+`{r} highest_fares_per_UPT_agency` with the transit mode of `{r} highest_fares_per_UPT_mode` had the highest total fares per UPT of `{r} round(highest_fares_per_UPT, digits = 2)` in 2022. Since `{r} highest_fares_per_UPT_agency` is a commuter bus company that provides coach bus transportation, charter bus and tour bus options, it is likely that passengers are charged higher fares, leading to a high total fare per UPT.
 
 #### Question #5
 
@@ -884,7 +891,7 @@ lowest_expenses_per_VRM
 
 ```
 
-The transit system with the lowest expenses per vehicle revenue mile (VRM) of `{r} lowest_expenses_per_VRM` in 2022 was `{r} lowest_expenses_per_VRM_mode` from `{r} lowest_expenses_per_VRM_agency`. Since `{r} lowest_expenses_per_VRM_mode` is a form of transportation similar to rideshares, transporting a significantly less amount of people than typical mass transit in a smaller vehicle, the expenses required to operate and maintain it is likely significantly less. Thus, it is understandable that this mode of transportation would have the lowest expenses per VRM.
+The transit system with the lowest expenses per vehicle revenue mile (VRM) of `{r} round(lowest_expenses_per_VRM, digits = 2)` in 2022 was `{r} lowest_expenses_per_VRM_mode` from `{r} lowest_expenses_per_VRM_agency`. Since `{r} lowest_expenses_per_VRM_mode` is a form of transportation similar to rideshares, transporting a significantly less amount of people than typical mass transit in a smaller vehicle, the expenses required to operate and maintain it is likely significantly less. Thus, it is understandable that this mode of transportation would have the lowest expenses per VRM.
 
 #### Question #6
 
@@ -913,10 +920,10 @@ highest_fares_per_VRM
 
 ```
 
-Lastly, `{r} highest_fares_per_VRM_mode` from `{r} highest_fares_per_VRM_agency` had the highest total fares per vehicle revenue mile (VRM) of `{r} highest_fares_per_VRM` in 2022. The `{r} highest_fares_per_VRM_agency` provides `{r} highest_fares_per_VRM_mode` ferryboat transportation not only for passengers but also charges extra for those who want to transport various vehicles which could contribute to the high fares per VRM.
+Lastly, `{r} highest_fares_per_VRM_mode` from `{r} highest_fares_per_VRM_agency` had the highest total fares per vehicle revenue mile (VRM) of `{r} round(highest_fares_per_VRM, digits = 2)` in 2022. The `{r} highest_fares_per_VRM_agency` provides `{r} highest_fares_per_VRM_mode` transportation not only for passengers but also charges extra for those who want to transport various vehicles which could contribute to the high fares per VRM.
 
 ## Conclusion
 
-Transit system efficiency is subjective and can be measured with different metrics (highest UPT, highest farebox recovery, lowest expenses per UPT, highest total fares per UPT, lowest expenses per VRM, and highest total fares per VRM). Based on the above information, using the farebox recovery ratio, I found that the most efficient transit system in the country in 2022 was the `{r} highest_farebox_recovery_mode` from the `{r} highest_farebox_recovery_agency`. This transit system was able to maximize its total fares while minimizing their expenses leading to the highest farebox recovery ratio of `{r} highest_farebox_recovery`.
+Transit system efficiency is subjective and can be measured with different metrics (highest UPT, highest farebox recovery, lowest expenses per UPT, highest total fares per UPT, lowest expenses per VRM, and highest total fares per VRM). Based on the above information, using the farebox recovery ratio, I found that the most efficient transit system in the country in 2022 was the `{r} highest_farebox_recovery_mode` from the `{r} highest_farebox_recovery_agency`. This transit system was able to maximize its total fares while minimizing their expenses leading to the highest farebox recovery ratio of `{r} round(highest_farebox_recovery, digits = 2)`.
 
-Overall, the [National Transit Database](https://www.transit.dot.gov/ntd) provided a lot of useful and insightful data, allowing for a wide range of analysis. Through these data, it was interesting to explore historical transit data leading to thought-provoking insights as well as the various metrics to determine effective and efficient transportation in the United States. As the world continues to accelerate post-COVID, the major US public transit systems will continue to improve and create more efficient means of transportation for commuters around the nation.
+Overall, the [National Transit Database](https://www.transit.dot.gov/ntd) provided a lot of useful and insightful data, allowing for a wide range of analysis. More specifically, it was interesting to explore historical transit data leading to thought-provoking insights as well as the various metrics to determine effective and efficient transportation in the United States. As the world continues to accelerate post-COVID, the major US public transit systems will continue to improve and create more efficient means of transportation for commuters around the nation.
