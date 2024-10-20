@@ -1,0 +1,933 @@
+---
+title: "Mini Project #02: The Business of Show Business"
+author: "Elissa"
+editor: visual
+---
+
+```{r}
+
+#| label: 'imdb_name_basics'
+#| message: false 
+#| warning: false
+#| cache: true
+
+get_imdb_file <- function(fname){
+    BASE_URL <- "https://datasets.imdbws.com/"
+    fname_ext <- paste0(fname, ".tsv.gz")
+    if(!file.exists(fname_ext)){
+        FILE_URL <- paste0(BASE_URL, fname_ext)
+        download.file(FILE_URL, 
+                      destfile = fname_ext)
+    }
+    as.data.frame(readr::read_tsv(fname_ext, lazy=FALSE))
+}
+
+NAME_BASICS      <- get_imdb_file("name.basics")
+
+```
+
+```{r}
+#| label: 'imdb_title_basics'
+#| message: false 
+#| warning: false
+#| cache: true
+
+TITLE_BASICS     <- get_imdb_file("title.basics")
+```
+
+```{r}
+#| label: 'imdb_title_episode'
+#| message: false 
+#| warning: false
+#| cache: true
+
+TITLE_EPISODES   <- get_imdb_file("title.episode")
+```
+
+```{r}
+#| label: 'imdb_title_ratings'
+#| message: false 
+#| warning: false
+#| cache: true
+
+TITLE_RATINGS    <- get_imdb_file("title.ratings")
+```
+
+```{r}
+#| label: 'imdb_title_crew'
+#| message: false 
+#| warning: false
+#| cache: true
+
+TITLE_CREW       <- get_imdb_file("title.crew")
+```
+
+```{r}
+#| label: 'imdb_title_principals'
+#| eval: false
+#| message: false 
+#| warning: false
+#| cache: false
+
+TITLE_PRINCIPALS <- get_imdb_file("title.principals")
+```
+
+```{r echo = FALSE}
+
+saveRDS(NAME_BASICS, "NAME_BASICS.rds")
+saveRDS(TITLE_BASICS, "TITLE_BASICS.rds")
+saveRDS(TITLE_EPISODES, "TITLE_EPISODES.rds")
+saveRDS(TITLE_RATINGS, "TITLE_RATINGS.rds")
+saveRDS(TITLE_CREW, "TITLE_CREW.rds")
+saveRDS(TITLE_PRINCIPALS, "TITLE_PRINCIPALS.rds")
+
+
+```
+
+START FROM HERE ON OPENING:
+
+```{r}
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+```
+
+```{r echo = FALSE}
+
+NAME_BASICS <- readRDS("NAME_BASICS.rds")
+TITLE_BASICS <- readRDS("TITLE_BASICS.rds")
+TITLE_EPISODES <- readRDS("TITLE_EPISODES.rds")
+TITLE_RATINGS <- readRDS("TITLE_RATINGS.rds")
+TITLE_CREW <- readRDS("TITLE_CREW.rds")
+TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS.rds")
+
+```
+
+```{r}
+
+NAME_BASICS <- NAME_BASICS |> 
+    filter(str_count(knownForTitles, ",") > 1)
+
+```
+
+```{r}
+
+TITLE_RATINGS |>
+    ggplot(aes(x=numVotes)) + 
+    geom_histogram(bins=30) +
+    xlab("Number of IMDB Ratings") + 
+    ylab("Number of Titles") + 
+    ggtitle("Majority of IMDB Titles Have Less than 100 Ratings") + 
+    theme_bw() + 
+    scale_x_log10(label=scales::comma) + 
+    scale_y_continuous(label=scales::comma)
+
+```
+
+Nearly 75% of our data contains movies that have less than 100 ratings on IMDB.
+
+```{r}
+
+TITLE_RATINGS |>
+    pull(numVotes) |>
+    quantile()
+
+```
+
+Let's narrow down our data to movies with more than 100 ratings, removing almost 75% of our original data set.
+
+```{r}
+
+TITLE_RATINGS <- TITLE_RATINGS |>
+    filter(numVotes >= 100)
+
+# NEED TO SHOW DATA TABLE HERE...
+TITLE_RATINGS
+
+```
+
+```{r}
+
+TITLE_BASICS <- TITLE_BASICS |>
+    semi_join(TITLE_RATINGS, 
+              join_by(tconst == tconst))
+
+TITLE_CREW <- TITLE_CREW |>
+    semi_join(TITLE_RATINGS, 
+              join_by(tconst == tconst))
+
+TITLE_EPISODES_1 <- TITLE_EPISODES |>
+    semi_join(TITLE_RATINGS, 
+              join_by(tconst == tconst))
+
+TITLE_EPISODES_2 <- TITLE_EPISODES |>
+    semi_join(TITLE_RATINGS, 
+              join_by(parentTconst == tconst))
+
+TITLE_EPISODES <- bind_rows(TITLE_EPISODES_1,
+                            TITLE_EPISODES_2) |>
+    distinct()
+
+TITLE_PRINCIPALS <- TITLE_PRINCIPALS |>
+    semi_join(TITLE_RATINGS, join_by(tconst == tconst))
+
+
+rm(TITLE_EPISODES_1)
+rm(TITLE_EPISODES_2)
+
+```
+
+```{r}
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(pals) # different color palette options
+library(forcats) # grouping into an "other" category
+
+```
+
+Saving the new (filtered) data tables.
+
+```{r echo = FALSE}
+
+saveRDS(NAME_BASICS, "NAME_BASICS_1.rds")
+saveRDS(TITLE_BASICS, "TITLE_BASICS_1.rds")
+saveRDS(TITLE_EPISODES, "TITLE_EPISODES_1.rds")
+saveRDS(TITLE_RATINGS, "TITLE_RATINGS_1.rds")
+saveRDS(TITLE_CREW, "TITLE_CREW_1.rds")
+saveRDS(TITLE_PRINCIPALS, "TITLE_PRINCIPALS_1.rds")
+
+```
+
+Start from here:
+
+```{r echo = FALSE}
+
+NAME_BASICS <- readRDS("NAME_BASICS_1.rds")
+TITLE_BASICS <- readRDS("TITLE_BASICS_1.rds")
+TITLE_EPISODES <- readRDS("TITLE_EPISODES_1.rds")
+TITLE_RATINGS <- readRDS("TITLE_RATINGS_1.rds")
+TITLE_CREW <- readRDS("TITLE_CREW_1.rds")
+TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS_1.rds")
+
+```
+
+## Initial Exploration
+
+Need to clean the NAME_BASICS table:
+
+```{r}
+
+NAME_BASICS <- NAME_BASICS |>
+    mutate(birthYear = as.numeric(birthYear),
+           deathYear = as.numeric(deathYear))
+
+```
+
+### Task #1
+
+Need to correct the column data types for each of the data tables.
+
+```{r}
+
+glimpse(TITLE_BASICS)
+
+```
+
+-   TITLE_BASICS:
+
+    -   isAdult = logical type
+
+    -   runtimeMinutes = numeric
+
+    -   startYear = numeric
+
+    -   endYear = numeric
+
+```{r}
+
+TITLE_BASICS <- TITLE_BASICS |>
+  mutate(isAdult = as.logical(isAdult),
+         runtimeMinutes = as.numeric(isAdult),
+         startYear = as.numeric(startYear),
+         endYear = as.numeric(endYear))
+
+glimpse(TITLE_BASICS)
+```
+
+TITLE_EPISODES:
+
+-   seasonNumber = numeric
+
+-   episodeNumber = numeric
+
+```{r}
+
+glimpse(TITLE_EPISODES)
+
+```
+
+```{r}
+
+TITLE_EPISODES <- TITLE_EPISODES |>
+  mutate(seasonNumber = as.numeric(seasonNumber),
+         episodeNumber = as.numeric(episodeNumber))
+
+TITLE_EPISODES
+
+```
+
+TITLE_RATINGS:
+
+-   averageRating = numeric
+
+-   numVotes = numeric
+
+```{r}
+
+glimpse(TITLE_RATINGS)
+
+```
+
+```{r}
+
+TITLE_RATINGS <- TITLE_RATINGS |>
+  mutate(averageRating = as.numeric(averageRating),
+         numVotes = as.numeric(numVotes))
+
+glimpse(TITLE_RATINGS)
+
+```
+
+#### TITLE_CREW –\> **DO I NEED TO CHANGE THE \\\\N to NAs?**
+
+```{r}
+
+glimpse(TITLE_CREW)
+
+```
+
+TITLE_PRINCIPALS:
+
+-   ordering = numeric
+
+```{r}
+
+glimpse(TITLE_PRINCIPALS)
+
+```
+
+```{r}
+
+TITLE_PRINCIPALS <- TITLE_PRINCIPALS |>
+  mutate(ordering = as.numeric(ordering))
+
+glimpse(TITLE_PRINCIPALS)
+
+```
+
+```{r}
+
+glimpse(NAME_BASICS)
+
+```
+
+Want to split each "knownForTitle" for each person into separate records rather than a list of titles.
+
+```{r}
+
+NAME_BASICS |>
+  separate_longer_delim(knownForTitles, ",") |>
+  slice_head(n = 10)
+
+```
+
+### Task #2
+
+Question #1: How many movies are in our data set? How many TV series? How many TV episodes?
+
+```{r}
+
+unique(TITLE_BASICS$titleType)
+
+```
+
+```{r}
+
+total_by_title_type <- TITLE_BASICS |>
+  group_by(titleType) |>
+  summarize(total = n())
+
+total_movies <- total_by_title_type |>
+  filter(titleType == "movie" | titleType == "tvMovie") |>
+  summarize(total = sum(total)) |>
+  pull(total)
+
+total_tvSeries <- total_by_title_type |>
+  filter(titleType == "tvSeries") |>
+  pull(total)
+
+total_tvEpisode <- total_by_title_type |>
+  filter(titleType == "tvEpisode") |>
+  pull(total)
+
+
+```
+
+Question #2: Who is the oldest living person in our data set?
+
+```{r}
+
+head(NAME_BASICS)
+
+```
+
+```{r}
+
+NAME_BASICS |>
+  summarize(n())
+
+no_death_date <- NAME_BASICS |>
+  filter(is.na(deathYear)) |>
+  mutate(age = 2024 - birthYear) |>
+  arrange(desc(age))
+
+no_death_date |>
+  summarize(n())
+
+no_death_date |>
+  filter(age >= 100) |>
+  summarize(n())
+
+```
+
+```{r}
+
+# current oldest person in the world is 116 years old, so we can filter out those that are calculated as older than 116
+
+no_death_date <- no_death_date |>
+  filter(age <= 116) |>
+  arrange(desc(age))
+
+```
+
+```{r}
+
+oldest_people <- no_death_date |>
+  slice_max(age)
+
+oldest_people_count <- oldest_people |>
+  summarize(total = n()) |>
+  pull(total)
+
+one_oldest_person <- oldest_people |>
+  slice_head(n = 1) |>
+  pull(primaryName)
+
+```
+
+Question #3: There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
+
+-   **NOT SURE I DID THIS RIGHT**
+
+```{r}
+
+basics_ratings <- inner_join(TITLE_BASICS, TITLE_RATINGS, by = 'tconst')
+
+perfect <- basics_ratings |>
+  filter(averageRating == 10)
+
+perfect_num <- perfect |>
+  summarize(total = n()) |>
+  pull(total)
+
+```
+
+```{r}
+
+perfect_rating <- basics_ratings |>
+  filter(titleType == "tvEpisode",
+         averageRating == 10,
+         numVotes >= 200000)
+
+perfect_episode <- left_join(perfect_rating, TITLE_EPISODES, by = 'tconst')
+
+perfect_episode_series <- TITLE_BASICS |>
+  filter(tconst == perfect_episode$parentTconst)
+
+cat("Series: ", perfect_episode_series$primaryTitle, "\nEpisode Name: ", perfect_episode$primaryTitle, "\nSeason: ", perfect_episode$seasonNumber, "\nEpisode: ", perfect_episode$episodeNumber)
+
+```
+
+Question #4: What four projects is the actor Mark Hamill most known for?
+
+```{r}
+
+NAME_BASICS_split <- NAME_BASICS |> 
+  separate_longer_delim(knownForTitles, ",")
+
+```
+
+```{r}
+
+mark_hamill <- NAME_BASICS_split |>
+  filter(primaryName == "Mark Hamill")
+
+mark_hamill_projects <- left_join(mark_hamill, TITLE_BASICS, join_by(knownForTitles == tconst))
+
+
+print(mark_hamill_projects$primaryTitle)
+```
+
+Question #5: What TV series, with more than 12 episodes, has the highest *average* rating?
+
+```{r}
+
+tv_series_12 <- inner_join(TITLE_EPISODES, TITLE_BASICS, join_by(parentTconst == tconst)) |> 
+  inner_join(TITLE_RATINGS, join_by(parentTconst == tconst)) |>
+  filter(episodeNumber > 12)
+
+tv_series_12_ID <- tv_series_12 |>
+  select(parentTconst) |>
+  unique()
+
+```
+
+```{r}
+
+high_rated_series <- inner_join(tv_series_12_ID, TITLE_BASICS, join_by(parentTconst == tconst)) |>
+  inner_join(TITLE_RATINGS, join_by(parentTconst == tconst)) |>
+  arrange(desc(averageRating)) |>
+  slice_max(averageRating, n = 1)
+
+print(high_rated_series$primaryTitle)
+print(high_rated_series$averageRating)
+
+```
+
+Question #6: The TV series *Happy Days* (1974-1984) gives us the common idiom [“jump the shark”](https://en.wikipedia.org/wiki/Jumping_the_shark). The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality.
+
+Is it true that episodes from later seasons of *Happy Days* have lower average ratings than the early seasons?
+
+```{r}
+
+happy_days_ID <- TITLE_BASICS |>
+  filter(originalTitle == "Happy Days", startYear == 1974) |>
+  pull(tconst)
+
+happy_days_episodes <- TITLE_EPISODES |>
+  filter(parentTconst == happy_days_ID) |>
+  left_join(TITLE_RATINGS, by = 'tconst') |>
+  arrange(seasonNumber, episodeNumber) |>
+  mutate(after_s5 = (seasonNumber > 5))
+
+happy_days_avg_ratings <- happy_days_episodes |>
+  group_by(after_s5) |>
+  summarize(average = mean(averageRating, na.rm = TRUE)) 
+
+up_to_5 <- happy_days_avg_ratings |>
+  filter(!after_s5) |>
+  pull(average)
+
+after_5 <- happy_days_avg_ratings |>
+  filter(after_s5) |>
+  pull(average)
+
+```
+
+## Quantifying Success
+
+### Task #3
+
+```{r}
+
+TITLE_RATINGS <- TITLE_RATINGS |>
+  mutate(success = (averageRating / max(averageRating)) * sqrt(numVotes / max(numVotes)))
+
+max_rating <- max(TITLE_RATINGS$averageRating)
+
+max_votes <- max(TITLE_RATINGS$numVotes)
+
+```
+
+$$
+
+success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{max(numVotes)})
+
+$$
+
+```{r}
+
+(5.4/10)*(215/2948622)
+
+(5.4/10)*sqrt(215/2948622)
+
+```
+
+
+
+Question #1: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
+
+```{r}
+
+movies_ratings_success <- full_join(TITLE_RATINGS, TITLE_BASICS, by = 'tconst') |>
+  filter(titleType == "movie")
+
+```
+
+```{r}
+
+top_5_movies <- movies_ratings_success |>
+  arrange(desc(success)) |>
+  slice_max(success, n = 5)
+
+print(top_5_movies$primaryTitle)
+
+```
+
+Question #2: Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
+
+```{r}
+
+max(movies_ratings_success$numVotes)
+min(movies_ratings_success$numVotes)
+median(movies_ratings_success$numVotes)
+mean(movies_ratings_success$numVotes)
+
+```
+
+```{r}
+
+min(movies_ratings_success$success)
+max(movies_ratings_success$success)
+median(movies_ratings_success$success)
+mean(movies_ratings_success$success)
+
+```
+
+```{r}
+
+
+low_success_3 <- movies_ratings_success |>
+  filter(numVotes >= quantile(movies_ratings_success$numVotes, 0.75) & success <=  quantile(movies_ratings_success$success, 0.25)
+) |>
+  arrange(success) |>
+  slice_head(n = 3)
+
+print(low_success_3$primaryTitle)
+
+```
+
+Question #3: Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
+
+```{r}
+
+steven_spielberg_basics <- NAME_BASICS_split |>
+  filter(primaryName == "Steven Spielberg")
+
+```
+
+```{r}
+
+steven_spielberg_movies <- left_join(steven_spielberg_basics, TITLE_BASICS, join_by(knownForTitles == tconst)) |>
+  left_join(TITLE_RATINGS, join_by(knownForTitles == tconst))
+
+
+
+```
+
+Question #4: Perform at least one other form of ‘spot check’ validation.
+
+-   Look for the top 5 most grossing movies of all time and check that it's success metric reflects the same success.
+
+    -   Avatar, Avengers: Endgame, Avatar: The Way of Water, Titanic, Star Wars: Episode VII - The Force Awakens
+
+#### Not sure if this really tells me anything
+
+```{r}
+
+avatar_success <- movies_ratings_success |>
+  filter(primaryTitle == "Avatar", startYear == 2009) |>
+  pull(success)
+
+avengers_success <- movies_ratings_success |>
+  filter(primaryTitle == "Avengers: Endgame") |>
+  pull(success)
+
+avatar_water_success <- movies_ratings_success |>
+  filter(primaryTitle == "Avatar: The Way of Water") |>
+  pull(success)
+
+titanic_success <- movies_ratings_success |>
+  filter(primaryTitle == "Titanic", startYear == 1997) |>
+  pull(success)
+
+star_wars_success <- movies_ratings_success |>
+  filter(primaryTitle == "Star Wars: Episode VII - The Force Awakens") |>
+  pull(success)
+
+```
+
+
+
+
+Question #5: Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value v such that movies above v are all “solid” or better.
+
+#### Temporary: 0.2
+
+```{r}
+
+movies_ratings_success |>
+    ggplot(aes(x=success)) + 
+    geom_histogram(bins=30) +
+    xlab("Success") + 
+    ylab("Number of Titles") + 
+    ggtitle("Distribution of Success") + 
+    theme_bw() + 
+    scale_x_log10(label=scales::comma) + 
+    scale_y_continuous(label=scales::comma)
+
+```
+
+```{r}
+
+movies_ratings_success |>
+  pull(success) |>
+  quantile()
+
+```
+
+```{r}
+
+movies_ratings_success |>
+  summarize(n())
+
+movies_ratings_success |>
+  filter(success >= 0.1) |>
+  summarize(n())
+
+```
+
+### Task #4
+
+Split the genres column
+
+```{r}
+
+split_genres <- movies_ratings_success |>
+  separate_longer_delim(genres, ",") |>
+  mutate(decade = (startYear %/% 10) * 10)
+
+
+unique(split_genres$decade)
+```
+
+```{r}
+
+successful_movies <- split_genres |>
+  filter(success >= 0.2)
+  
+length(unique(successful_movies$primaryTitle))
+
+```
+
+```{r}
+
+successful_movies |>
+  arrange(averageRating)
+
+```
+
+#### Question #1
+
+```{r}
+
+successful_movies |>
+  group_by(decade, genres) |>
+  summarize(total = n()) |>
+  mutate(max_total = max(total)) |>
+  filter(total == max_total) |>
+  ungroup() |>
+  select(decade, genres)
+
+
+```
+
+
+```{r}
+
+successful_movies |>
+  ggplot(aes(x = decade, fill = genres)) +
+  geom_bar()
+
+```
+
+```{r}
+
+# forcats stuff
+
+
+successful_movies |>
+  mutate(new_genres = fct_lump_n(genres, 5)) |>
+  ggplot(aes(x = decade, fill = new_genres)) +
+  geom_bar()
+
+# other category includes 16 other genres
+
+```
+
+
+```{r fig.height = 10, fig.width = 12}
+
+successful_movies |>
+  ggplot(aes(x = genres)) +
+  geom_bar() +
+  facet_wrap(~decade,
+             ncol = 3) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+```{r}
+
+successful_movies |>
+  mutate(new_genres = fct_lump_n(genres, 5)) |>
+  ggplot(aes(x = new_genres)) +
+  geom_bar() +
+  facet_wrap(~decade,
+             ncol = 3) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+
+```
+
+
+
+
+
+```{r}
+
+successful_movies |>
+  filter(decade >= 2010) |>
+  mutate(decade = as.character(decade)) |>
+  ggplot(aes(x = genres, fill = decade)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  ggtitle("Successful Films Since 2010 by Genre")
+
+
+```
+
+```{r}
+
+successful_movies |>
+  ggplot(aes(x=success)) + 
+  geom_histogram(bins=30) +
+  facet_wrap(~genres) +
+  xlab("Success") + 
+  ylab("Number of Titles") + 
+  ggtitle("Distribution of Success for Each Genre") + 
+  theme_bw() + 
+  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma)
+
+```
+```{r}
+
+successful_movies |>
+  mutate(new_genres = fct_lump_n(genres, 5)) |>
+  ggplot(aes(x=success)) + 
+  geom_histogram(bins=30) +
+  facet_wrap(~new_genres) +
+  xlab("Success") + 
+  ylab("Number of Titles") + 
+  ggtitle("Distribution of Success for Each Genre") + 
+  theme_bw() + 
+  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma)
+
+
+```
+
+
+
+```{r}
+
+successful_movies |>
+  group_by(genres, decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total, group = genres)) + 
+  geom_line(aes(color = genres)) +
+  geom_point(aes(color = genres)) +
+  xlab("Decade") + 
+  ylab("Number of Successes") + 
+  ggtitle("Number of Successful Movies per Decade by Genre") + 
+  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma) +
+  scale_color_manual(values = unname(alphabet()))
+
+```
+```{r}
+
+successful_movies |>
+  mutate(new_genres = fct_lump_n(genres, 5)) |>
+  group_by(new_genres, decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total, group = new_genres)) + 
+  geom_line(aes(color = new_genres)) +
+  geom_point(aes(color = new_genres)) +
+  xlab("Decade") + 
+  ylab("Number of Successes") + 
+  ggtitle("Number of Successful Movies per Decade by Genre") + 
+  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma)
+
+```
+
+
+
+
+```{r}
+
+total_movies_genre <- split_genres |>
+  group_by(genres) |>
+  summarize(total = n())
+
+total_successful_movies_genre <- split_genres |>
+  filter(success >= 0.2) |>
+  group_by(genres) |>
+  summarize(total = n())
+
+percentage_successful <- inner_join(total_movies_genre, total_successful_movies_genre, by = 'genres') |>
+  mutate(percentage = (total.y/total.x) * 100) |>
+  arrange(desc(percentage))
+
+```
+
+```{r}
+
+percentage_successful |>
+  ggplot(aes(x = genres, y = percentage)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  ggtitle("Percentage of Successful Films by Genre")
+
+```
+
+```{r}
+
+scifi_success <- successful_movies |>
+  filter(genres == "Sci-Fi") |>
+  arrange(desc(success))
+
+head(scifi_success)
+
+```
+
+### Task #5
+
+
+
