@@ -64,13 +64,19 @@ TITLE_CREW       <- get_imdb_file("title.crew")
 
 ```{r}
 #| label: 'imdb_title_principals'
-#| eval: false
 #| message: false 
 #| warning: false
 #| cache: false
 
 TITLE_PRINCIPALS <- get_imdb_file("title.principals")
 ```
+
+```{r}
+
+head(TITLE_PRINCIPALS)
+
+```
+
 
 ```{r echo = FALSE}
 
@@ -149,6 +155,10 @@ TITLE_RATINGS
 ```
 
 ```{r}
+
+#| message: false 
+#| warning: false
+#| cache: true
 
 TITLE_BASICS <- TITLE_BASICS |>
     semi_join(TITLE_RATINGS, 
