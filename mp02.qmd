@@ -77,7 +77,6 @@ head(TITLE_PRINCIPALS)
 
 ```
 
-
 ```{r echo = FALSE}
 
 saveRDS(NAME_BASICS, "NAME_BASICS.rds")
@@ -569,16 +568,6 @@ success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{m
 
 $$
 
-```{r}
-
-(5.4/10)*(215/2948622)
-
-(5.4/10)*sqrt(215/2948622)
-
-```
-
-
-
 Question #1: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
 
 ```{r}
@@ -645,7 +634,7 @@ steven_spielberg_basics <- NAME_BASICS_split |>
 steven_spielberg_movies <- left_join(steven_spielberg_basics, TITLE_BASICS, join_by(knownForTitles == tconst)) |>
   left_join(TITLE_RATINGS, join_by(knownForTitles == tconst))
 
-
+steven_spielberg_movies
 
 ```
 
@@ -680,9 +669,6 @@ star_wars_success <- movies_ratings_success |>
   pull(success)
 
 ```
-
-
-
 
 Question #5: Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value v such that movies above v are all “solid” or better.
 
@@ -723,30 +709,33 @@ movies_ratings_success |>
 
 ### Task #4
 
+```{r}
+
+# Successful Movies Filter
+
+successful_movies <- movies_ratings_success |>
+  filter(success >= 0.2)
+
+
+```
+
 Split the genres column
 
 ```{r}
 
-split_genres <- movies_ratings_success |>
+successful_movies_split_genres <- successful_movies |>
   separate_longer_delim(genres, ",") |>
   mutate(decade = (startYear %/% 10) * 10)
 
 
-unique(split_genres$decade)
+unique(successful_movies_split_genres$decade)
+
+length(unique(successful_movies_split_genres$primaryTitle))
 ```
 
 ```{r}
 
-successful_movies <- split_genres |>
-  filter(success >= 0.2)
-  
-length(unique(successful_movies$primaryTitle))
-
-```
-
-```{r}
-
-successful_movies |>
+successful_movies_split_genres |>
   arrange(averageRating)
 
 ```
@@ -755,7 +744,7 @@ successful_movies |>
 
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   group_by(decade, genres) |>
   summarize(total = n()) |>
   mutate(max_total = max(total)) |>
@@ -766,10 +755,9 @@ successful_movies |>
 
 ```
 
-
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   ggplot(aes(x = decade, fill = genres)) +
   geom_bar()
 
@@ -780,7 +768,7 @@ successful_movies |>
 # forcats stuff
 
 
-successful_movies |>
+successful_movies_split_genres |>
   mutate(new_genres = fct_lump_n(genres, 5)) |>
   ggplot(aes(x = decade, fill = new_genres)) +
   geom_bar()
@@ -789,10 +777,9 @@ successful_movies |>
 
 ```
 
-
 ```{r fig.height = 10, fig.width = 12}
 
-successful_movies |>
+successful_movies_split_genres |>
   ggplot(aes(x = genres)) +
   geom_bar() +
   facet_wrap(~decade,
@@ -803,7 +790,7 @@ successful_movies |>
 
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   mutate(new_genres = fct_lump_n(genres, 5)) |>
   ggplot(aes(x = new_genres)) +
   geom_bar() +
@@ -814,13 +801,9 @@ successful_movies |>
 
 ```
 
-
-
-
-
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   filter(decade >= 2010) |>
   mutate(decade = as.character(decade)) |>
   ggplot(aes(x = genres, fill = decade)) +
@@ -833,7 +816,7 @@ successful_movies |>
 
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   ggplot(aes(x=success)) + 
   geom_histogram(bins=30) +
   facet_wrap(~genres) +
@@ -845,9 +828,10 @@ successful_movies |>
   scale_y_continuous(label=scales::comma)
 
 ```
+
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   mutate(new_genres = fct_lump_n(genres, 5)) |>
   ggplot(aes(x=success)) + 
   geom_histogram(bins=30) +
@@ -862,11 +846,9 @@ successful_movies |>
 
 ```
 
-
-
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   group_by(genres, decade) |>
   summarize(total = n()) |>
   ggplot(aes(x = decade, y = total, group = genres)) + 
@@ -880,9 +862,10 @@ successful_movies |>
   scale_color_manual(values = unname(alphabet()))
 
 ```
+
 ```{r}
 
-successful_movies |>
+successful_movies_split_genres |>
   mutate(new_genres = fct_lump_n(genres, 5)) |>
   group_by(new_genres, decade) |>
   summarize(total = n()) |>
@@ -897,17 +880,14 @@ successful_movies |>
 
 ```
 
-
-
-
 ```{r}
 
-total_movies_genre <- split_genres |>
+total_movies_genre <- movies_ratings_success |>
+  separate_longer_delim(genres, ",") |>
   group_by(genres) |>
   summarize(total = n())
 
-total_successful_movies_genre <- split_genres |>
-  filter(success >= 0.2) |>
+total_successful_movies_genre <- successful_movies_split_genres |>
   group_by(genres) |>
   summarize(total = n())
 
@@ -929,7 +909,7 @@ percentage_successful |>
 
 ```{r}
 
-scifi_success <- successful_movies |>
+scifi_success <- successful_movies_split_genres |>
   filter(genres == "Sci-Fi") |>
   arrange(desc(success))
 
@@ -938,6 +918,248 @@ head(scifi_success)
 ```
 
 ### Task #5
+
+```{r}
+
+names_movies_ratings_join <- left_join(NAME_BASICS_split, movies_ratings_success, join_by("knownForTitles" == "tconst")) |>
+  drop_na(success)
+
+```
+
+
+```{r}
+
+# counts the remaining total "knownForTitles" per person (after drop NA)
+
+person_movie_count <- names_movies_ratings_join |>
+  group_by(nconst) |>
+  summarize(average_person_success = sum(success) / n(),
+            total_movies = n())
+
+
+```
+
+
+```{r}
+
+# people with an average success of 0.2 or higher on their movies
+
+names_success_movies <- left_join(names_movies_ratings_join, person_movie_count, by = "nconst") |>
+  arrange(desc(average_person_success)) |>
+  filter(average_person_success >= 0.2)
+  
+
+```
+
+
+```{r}
+
+# split the primaryProfessions and genres columns
+# need to filter for only first profession being actor/actress/director
+
+names_success_movies_split <- names_success_movies |>
+  separate_longer_delim(primaryProfession, ",") |>
+  separate_longer_delim(genres, ",")
+
+
+```
+
+
+```{r}
+
+# not sure if i want this anymore
+
+# split the primaryProfessions and genres columns
+# filtering for first profession ONLY for each person
+
+# names_success_movies_split <- names_success_movies |>
+#   separate_longer_delim(primaryProfession, ",") |>
+#   group_by(nconst) |>
+#   mutate(profession = first(primaryProfession)) |>
+#   filter(primaryProfession == profession) |>
+#   select(-profession) |>
+#   separate_longer_delim(genres, ",")
+
+
+```
+
+
+
+```{r}
+
+# filter for sci-fi genre and only actors, actresses and directors
+
+
+scifi_names_success <- names_success_movies_split |>
+  filter(genres == "Sci-Fi") |>
+  filter(primaryProfession == "actor" | primaryProfession == "actress" | primaryProfession == "director") |>
+  arrange(desc(total_movies), desc(average_person_success))
+
+
+```
+
+```{r}
+
+# experimenting here...
+
+act_scifi_names_success <- scifi_names_success |>
+  filter(primaryProfession == "actor" | primaryProfession == "actress")
+
+direct_scifi_names_success <- scifi_names_success |>
+  filter(primaryProfession == "director")
+
+act_direct_pairs_sci_fi <- inner_join(act_scifi_names_success, 
+                               direct_scifi_names_success, 
+                               by = c('knownForTitles', 'averageRating', 'numVotes', 'titleType', 'primaryTitle', 'originalTitle', 'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres')) |>
+  mutate(combined_success = average_person_success.x * average_person_success.y) |>
+  arrange(desc(combined_success))
+
+```
+
+
+
+```{r}
+
+steven_spielberg <- direct_scifi_names_success |>
+  filter(primaryName == "Steven Spielberg")
+
+steven_spielberg_rank <- direct_scifi_names_success |>
+  mutate(rank = rank(-average_person_success), percent = rank / max(rank)) |>
+  filter(primaryName == "Steven Spielberg")
+  
+steven_spielberg$average_person_success
+
+```
+
+
+
+```{r fig.width = 10, fig.height = 4}
+
+movies_ratings_success |>
+  filter(primaryTitle %in% c("Close Encounters of the Third Kind", 
+                           "E.T. the Extra-Terrestrial", 
+                           "Jurassic Park",
+                           "Ready Player One")) |>
+  ggplot(aes(x = primaryTitle, y = success)) +
+  geom_bar(stat = 'identity', width = 0.5) +
+  geom_hline(yintercept = 0.2, linetype = "dashed", color = "black", linewidth = 1) +
+  labs(title = "Steven Spielberg's Sci-Fi Movies",
+       x = "Movie Title",
+       y = "Success Index")
+
+```
+
+```{r}
+
+steven_spielberg_movies_split <- names_success_movies |>
+  filter(primaryName == "Steven Spielberg") |>
+  separate_longer_delim(genres, ',')
+  
+
+steven_spielberg_star_actors <- left_join(names_success_movies_split,
+                                     steven_spielberg_movies_split,
+                                     by = c('knownForTitles', 'averageRating', 'numVotes', 'titleType', 'primaryTitle', 'originalTitle', 'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres')) |>
+  drop_na(nconst.y) |>
+  filter(is.na(deathYear.x)) |>
+  mutate(combined_success = average_person_success.x * average_person_success.y,
+         age_act = 2024 - birthYear.x) |>
+  filter(primaryProfession.x == "actor" | primaryProfession.x == "actress") |>
+  filter(primaryName.x %in% c("Liam Neeson", "Ralph Fiennes", "Ben Kingsley",
+                              "Henry Thomas", "Drew Barrymore", "Peter Coyote",
+                              "Tom Hanks", "Matt Damon", "Tom Sizemore",
+                              "Harrison Ford", "Karen Allen", "Paul Freeman"))
+
+
+```
+
+
+```{r fig.width = 15, fig.height = 6}
+
+indiana_jones_movies <- movies_ratings_success |>
+  filter(primaryTitle %in% c("Raiders of the Lost Ark",
+                             "Indiana Jones and the Temple of Doom",
+                             "Indiana Jones and the Last Crusade",
+                             "Indiana Jones and the Kingdom of the Crystal Skull",
+                             "Indiana Jones and the Dial of Destiny")) |>
+  mutate(director = c("Steven Spielberg", 
+                      "Steven Spielberg", 
+                      "Steven Spielberg", 
+                      "Steven Spielberg", 
+                      "James Mangold"))
+
+movie_order <- c("Raiders of the Lost Ark",
+                 "Indiana Jones and the Temple of Doom",
+                 "Indiana Jones and the Last Crusade",
+                 "Indiana Jones and the Kingdom of the Crystal Skull",
+                 "Indiana Jones and the Dial of Destiny")
+
+indiana_jones_movies |>
+  ggplot(aes(x = primaryTitle, y = success, fill = director)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  geom_hline(yintercept = 0.2, linetype = "dashed", color = "black", linewidth = 1) +
+  labs(title = "Indiana Jones Movies",
+       x = "Movie Title",
+       y = "Success Index",
+       fill = "Directors") +
+  theme(legend.position = "bottom") +
+  scale_x_discrete(limits = movie_order)
+
+
+```
+
+```{r}
+
+scifi_actors <- names_success_movies |>
+  separate_longer_delim(primaryProfession, ",") |>
+  group_by(nconst) |>
+  mutate(profession = first(primaryProfession)) |>
+  filter(primaryProfession == profession) |>
+  select(-profession) |>
+  separate_longer_delim(genres, ",") |>
+  filter(genres == "Sci-Fi") |>
+  filter(primaryProfession == "actor" | primaryProfession == "actress") |>
+  filter(is.na(deathYear)) |>
+  mutate(age = 2024 - birthYear) |>
+  filter(age < 30) |>
+  arrange(desc(average_person_success))
+
+
+```
+
+
+```{r}
+
+movies_ratings_success |>
+  filter(primaryTitle == "The Day After Tomorrow") 
+
+movies_ratings_success |>
+  filter(primaryTitle == "Independence Day" & startYear == 1996)
+
+movies_ratings_success |>
+  filter(primaryTitle == "Back to the Future")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
