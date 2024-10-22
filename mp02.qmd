@@ -4,7 +4,23 @@ author: "Elissa"
 editor: visual
 ---
 
+## Introduction
+
+![Movie Image](../assets/mp02/movie_industry.jpg)
+
+Hollywood first launched with the completion of the silent film *The Count of Monte Cristo* in 1908. Shortly after, Hollywood’s first studio was created, and the rest is history.[^1] Since then, Hollywood has grown to be synonymous with the entertainment industry. As the film and television industries progressed with the advancement of technology, so did the demands for more creative storytelling and diverse entertainment.
+
+Hollywood development executives are tasked with developing these new and creative movie ideas. Historically, these executives relied on adapting existing material like novels, true stories, or intellectual property (IP). However, this traditional approach has faced criticism by insiders and viewers for its reliance on pre-existing sources. The goal of this project is to develop these data-driven ideas to inspire new movies.
+
+We will be utilizing the [Internet Movie Database (IMDb)](https://www.imdb.com/) to drive our data-driven insights on the entertainment industry. More specifically, we will use the data sets from the [IMDb non-commercial release](https://datasets.imdbws.com/). With this data, we hope to analyze the significant characteristics of successful films, discover successful filmmakers and actors, and explore unique insights from the entertainment industry.
+
+## Data
+
+The below code will download and load these files from IMDb into R, which results in a total of 6 data tables: `NAME_BASICS`, `TITLE_BASICS`, `TITLE_EPISODES`, `TITLE_RATINGS`, `TITLE_CREW`, `TITLE_PRINCIPALS`.
+
 ```{r}
+
+#| code-fold: true
 
 #| label: 'imdb_name_basics'
 #| message: false 
@@ -27,6 +43,9 @@ NAME_BASICS      <- get_imdb_file("name.basics")
 ```
 
 ```{r}
+
+#| code-fold: true
+
 #| label: 'imdb_title_basics'
 #| message: false 
 #| warning: false
@@ -36,6 +55,9 @@ TITLE_BASICS     <- get_imdb_file("title.basics")
 ```
 
 ```{r}
+
+#| code-fold: true
+
 #| label: 'imdb_title_episode'
 #| message: false 
 #| warning: false
@@ -45,6 +67,9 @@ TITLE_EPISODES   <- get_imdb_file("title.episode")
 ```
 
 ```{r}
+
+#| code-fold: true
+
 #| label: 'imdb_title_ratings'
 #| message: false 
 #| warning: false
@@ -54,6 +79,9 @@ TITLE_RATINGS    <- get_imdb_file("title.ratings")
 ```
 
 ```{r}
+
+#| code-fold: true
+
 #| label: 'imdb_title_crew'
 #| message: false 
 #| warning: false
@@ -63,6 +91,9 @@ TITLE_CREW       <- get_imdb_file("title.crew")
 ```
 
 ```{r}
+
+#| code-fold: true
+
 #| label: 'imdb_title_principals'
 #| message: false 
 #| warning: false
@@ -71,9 +102,25 @@ TITLE_CREW       <- get_imdb_file("title.crew")
 TITLE_PRINCIPALS <- get_imdb_file("title.principals")
 ```
 
+Below are a few packages that will be useful for our IMDb entertainment data analysis.
+
 ```{r}
 
-head(TITLE_PRINCIPALS)
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("tidyverse")) install.packages("tidyverse")
+if(!require("DT")) install.packages("DT")
+if(!require("ggplot2")) install.packages("ggplot2")
+if(!require("pals")) install.packages("pals")
+if(!require("forcats")) install.packages("forcats")
+if(!require("stringr")) install.packages("stringr")
+
+library(dplyr)
+library(tidyverse)
+library(DT)
+library(ggplot2)
+library(pals) # different color palette options
+library(forcats) # grouping into an "other" category
+library(stringr) # filtering on strings
 
 ```
 
@@ -89,16 +136,6 @@ saveRDS(TITLE_PRINCIPALS, "TITLE_PRINCIPALS.rds")
 
 ```
 
-START FROM HERE ON OPENING:
-
-```{r}
-
-library(dplyr)
-library(tidyverse)
-library(ggplot2)
-
-```
-
 ```{r echo = FALSE}
 
 NAME_BASICS <- readRDS("NAME_BASICS.rds")
@@ -110,14 +147,30 @@ TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS.rds")
 
 ```
 
+## Data Sub-Sampling
+
+Since our data is incredibly large, we need to take a closer look at the data to filter out any unnecessary information to a more reasonable data set to analyze more effectively and efficiently.
+
+To restrict our attention to more well-known people in the entertainment industry, we will only keep those that have more than 1 "known for" credit.
+
 ```{r}
+
+#| code-fold: true
 
 NAME_BASICS <- NAME_BASICS |> 
     filter(str_count(knownForTitles, ",") > 1)
 
+NAME_BASICS |>
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 5))
+
 ```
 
+Additionally, taking a look at the distribution of the amount of votes per title, we find that the distribution is heavily skewed right, indicating a significant number of titles with less than 100 votes.
+
 ```{r}
+
+#| code-fold: true
 
 TITLE_RATINGS |>
     ggplot(aes(x=numVotes)) + 
@@ -131,29 +184,39 @@ TITLE_RATINGS |>
 
 ```
 
-Nearly 75% of our data contains movies that have less than 100 ratings on IMDB.
+Breaking this down a little further, we find that nearly 75% of the titles from the data set have less than 100 ratings.
 
 ```{r}
 
+#| code-fold: true
+
 TITLE_RATINGS |>
-    pull(numVotes) |>
-    quantile()
+  pull(numVotes) |>
+  quantile()
 
 ```
 
-Let's narrow down our data to movies with more than 100 ratings, removing almost 75% of our original data set.
+So, to prevent our computers from working with such massive files, let's focus only on titles with more than 100 ratings. After dropping these records, we greatly reduce the size of our data set.
 
 ```{r}
+
+#| code-fold: true
 
 TITLE_RATINGS <- TITLE_RATINGS |>
     filter(numVotes >= 100)
 
-# NEED TO SHOW DATA TABLE HERE...
-TITLE_RATINGS
+
+head(TITLE_RATINGS) |>
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 5))
 
 ```
 
+We also need to reflect this change on our remaining `TITLE_*` data tables using `semi_join`s.
+
 ```{r}
+
+#| code-fold: true
 
 #| message: false 
 #| warning: false
@@ -188,17 +251,7 @@ rm(TITLE_EPISODES_2)
 
 ```
 
-```{r}
-
-library(dplyr)
-library(tidyverse)
-library(ggplot2)
-library(pals) # different color palette options
-library(forcats) # grouping into an "other" category
-
-```
-
-Saving the new (filtered) data tables.
+We have filtered each of the data tables into a more manageable size and now can begin analysis on the entertainment industry.
 
 ```{r echo = FALSE}
 
@@ -210,8 +263,6 @@ saveRDS(TITLE_CREW, "TITLE_CREW_1.rds")
 saveRDS(TITLE_PRINCIPALS, "TITLE_PRINCIPALS_1.rds")
 
 ```
-
-Start from here:
 
 ```{r echo = FALSE}
 
@@ -226,196 +277,184 @@ TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS_1.rds")
 
 ## Initial Exploration
 
-Need to clean the NAME_BASICS table:
+### Data Cleaning
+
+Before beginning any data analysis, it is crucial that the data is cleaned and transformed appropriately to avoid any issues further down the line. Upon first glimpse of the six IMDb data sets, there are columns with incorrect data types. Occasionally when data sets are imported and read in, numeric columns are misread as character (string) data. This is due to the "null" values being represented in a non-standard way. In the case of IMDb, null values are recorded as `\\N`, R does not read this as `NA` values, misunderstands this and reads these values in as strings. 
+
+Subsequently, these columns need to be adjusted to reflect its quantitative data or logical data for future analysis. To correct this, we can use a combination of the `mutate` command with the `as.numeric` (for quantitative values) or `as.logical` (for factor/level data) command to alter the type of column. Below are the columns I adjusted for each of the data tables from their previous character data type to either logical or numeric.
+
+```{r echo = FALSE}
+
+glimpse(NAME_BASICS)
+glimpse(TITLE_BASICS)
+glimpse(TITLE_EPISODES)
+glimpse(TITLE_RATINGS)
+glimpse(TITLE_CREW)
+glimpse(TITLE_PRINCIPALS)
+
+```
 
 ```{r}
+
+#| code-fold: true
+
+# NAME_BASICS: birthYear and deathYear need to be corrected to numeric values
 
 NAME_BASICS <- NAME_BASICS |>
     mutate(birthYear = as.numeric(birthYear),
            deathYear = as.numeric(deathYear))
 
-```
-
-### Task #1
-
-Need to correct the column data types for each of the data tables.
-
-```{r}
-
-glimpse(TITLE_BASICS)
-
-```
-
--   TITLE_BASICS:
-
-    -   isAdult = logical type
-
-    -   runtimeMinutes = numeric
-
-    -   startYear = numeric
-
-    -   endYear = numeric
-
-```{r}
+# TITLE_BASICS: isAdult needs to be corrected to logical values, while startYear, endYear, and runtimeMinutes need to be corrected to numeric values
 
 TITLE_BASICS <- TITLE_BASICS |>
   mutate(isAdult = as.logical(isAdult),
-         runtimeMinutes = as.numeric(isAdult),
          startYear = as.numeric(startYear),
-         endYear = as.numeric(endYear))
+         endYear = as.numeric(endYear),
+         runtimeMinutes = as.numeric(isAdult))
 
-glimpse(TITLE_BASICS)
-```
-
-TITLE_EPISODES:
-
--   seasonNumber = numeric
-
--   episodeNumber = numeric
-
-```{r}
-
-glimpse(TITLE_EPISODES)
-
-```
-
-```{r}
+# TITLE_EPISODES: seasonNumber and episodeNumber need to be fixed to numeric values
 
 TITLE_EPISODES <- TITLE_EPISODES |>
   mutate(seasonNumber = as.numeric(seasonNumber),
          episodeNumber = as.numeric(episodeNumber))
 
-TITLE_EPISODES
+# TITLE_RATINGS: column types are good
 
-```
+# TITLE_CREW: column types are correct, for character type columns (directors and writers), let's change the '\\N' values to the NA values that R understands
 
-TITLE_RATINGS:
+TITLE_CREW <- TITLE_CREW |>
+  mutate(directors = na_if(directors, "\\N"),
+         writers = na_if(writers, "\\N"))
 
--   averageRating = numeric
-
--   numVotes = numeric
-
-```{r}
-
-glimpse(TITLE_RATINGS)
-
-```
-
-```{r}
-
-TITLE_RATINGS <- TITLE_RATINGS |>
-  mutate(averageRating = as.numeric(averageRating),
-         numVotes = as.numeric(numVotes))
-
-glimpse(TITLE_RATINGS)
-
-```
-
-#### TITLE_CREW –\> **DO I NEED TO CHANGE THE \\\\N to NAs?**
-
-```{r}
-
-glimpse(TITLE_CREW)
-
-```
-
-TITLE_PRINCIPALS:
-
--   ordering = numeric
-
-```{r}
-
-glimpse(TITLE_PRINCIPALS)
-
-```
-
-```{r}
+# TITLE_PRINCIPALS: column types are correct, for character type columns (job, characters), let's change the '\\N' values to the NA values that R understands
 
 TITLE_PRINCIPALS <- TITLE_PRINCIPALS |>
-  mutate(ordering = as.numeric(ordering))
+  mutate(job = na_if(job, "\\N"),
+         characters = na_if(characters, "\\N"))
 
-glimpse(TITLE_PRINCIPALS)
-
-```
-
-```{r}
-
-glimpse(NAME_BASICS)
 
 ```
 
-Want to split each "knownForTitle" for each person into separate records rather than a list of titles.
+::: {.callout-note}
+There are a few columns in some of the data tables that combine several pieces of information into one cell separated with commas (e.g. `primaryProfession` and `knownForTitles` in the `NAME_BASICS` table). In order to break these values into multiple rows, we can use the `separate_longer_delim`. This will be a useful tool for later when we are taking a closer look at the data.
+:::
 
-```{r}
+### Preliminary Exploration Questions
 
-NAME_BASICS |>
-  separate_longer_delim(knownForTitles, ",") |>
-  slice_head(n = 10)
+Before starting any deep-dive analysis, it is important to do some preliminary exploration of our data tables to understand what information we are working with.
 
-```
+::: {.callout-tip}
+Below are some preliminary questions, we would like to answer as an initial exploration of our data tables.
+1. How many movies are in our data set? How many TV series? How many TV episodes?
+2. Who is the oldest living person in our data set?
+3. There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
+4. What four projects is the actor Mark Hamill most known for?
+5. What TV series, with more than 12 episodes, has the highest average rating?
+6. The TV series Happy Days (1974-1984) gives us the common idiom “jump the shark”. The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality.
 
-### Task #2
+Is it true that episodes from later seasons of Happy Days have lower average ratings than the early seasons?
+:::
 
 Question #1: How many movies are in our data set? How many TV series? How many TV episodes?
 
+As a preliminary step, it is useful to take a closer look at the data set to see the amount of data remaining after cleaning such a large data set. More specifically, let's figure out how many movies, TV series and TV episodes remain in our data set. Before approaching this question, it is important to understand the existing types of titles in our data set.
+
 ```{r}
+
+#| code-fold: true
 
 unique(TITLE_BASICS$titleType)
 
 ```
 
+Now that we know how the title types are categorized, we can filter out our data set to determine the count of each type.
+
 ```{r}
+
+#| code-fold: true
+
+# Total titles by title type
 
 total_by_title_type <- TITLE_BASICS |>
   group_by(titleType) |>
   summarize(total = n())
+
+# Total movies: included both movies and tvMovie categories
 
 total_movies <- total_by_title_type |>
   filter(titleType == "movie" | titleType == "tvMovie") |>
   summarize(total = sum(total)) |>
   pull(total)
 
+cat('Total Movies: ', prettyNum(total_movies, big.mark = ","), '\n')
+
+# Total TV series
+
 total_tvSeries <- total_by_title_type |>
   filter(titleType == "tvSeries") |>
   pull(total)
+
+cat('Total TV Series: ', prettyNum(total_tvSeries, big.mark = ","), '\n')
+
+# Total TV Episodes
 
 total_tvEpisode <- total_by_title_type |>
   filter(titleType == "tvEpisode") |>
   pull(total)
 
+cat('Total TV Episodes: ', prettyNum(total_tvEpisode, big.mark = ","))
 
 ```
+
+Our data set currently has information about `{r} prettyNum(total_movies, big.mark = ",")` movies (including television movies), `{r} prettyNum(total_tvSeries, big.mark = ",")` TV series (or shows), and `{r} prettyNum(total_tvEpisode, big.mark = ",")` television episodes (more specifically, these are TV series episodes).
+
 
 Question #2: Who is the oldest living person in our data set?
 
-```{r}
+```{r echo = FALSE}
 
-head(NAME_BASICS)
+total_people <- NAME_BASICS |>
+  summarize(total = n()) |>
+  pull(total)
 
 ```
 
+
+In the NAME_BASICS table, we have information on `{r} prettyNum(total_people, big.mark = ",")` people in the data set. However, to find prospective actors/actresses and directors for new movies, it’s important to filter our data down to those that are still alive. By filtering the `deathYear` column to only show `NA` values, it removes records of people with listed death years (these are people we know for sure are no longer alive). 
+
 ```{r}
 
-NAME_BASICS |>
-  summarize(n())
+#| code-fold: true
 
 no_death_date <- NAME_BASICS |>
   filter(is.na(deathYear)) |>
   mutate(age = 2024 - birthYear) |>
   arrange(desc(age))
 
-no_death_date |>
-  summarize(n())
+```
 
-no_death_date |>
+```{r echo = FALSE}
+
+no_death_date_total <- no_death_date |>
+  summarize(total = n()) |>
+  pull(total)
+
+over_100 <- no_death_date |>
   filter(age >= 100) |>
-  summarize(n())
+  summarize(total = n()) |>
+  pull(total)
 
 ```
 
+
+The remaining data set contains `{r} prettyNum(no_death_date_total, big.mark = ",")` records. However, after creating an “age” column and observing these values, there are `{r} prettyNum(over_100, big.mark = ",")` people in the remaining data set that are over 100 years old, which seems highly unlikely.
+
+
+So, after a little extra research, I found that the current oldest living person is 116 years old ([Tomiko Itooka](https://en.wikipedia.org/wiki/Tomiko_Itooka) from Japan), so I filtered down the data even further to only contain people who would be at most 116 years old based on the information given. 
+
 ```{r}
 
-# current oldest person in the world is 116 years old, so we can filter out those that are calculated as older than 116
+#| code-fold: true
 
 no_death_date <- no_death_date |>
   filter(age <= 116) |>
@@ -423,7 +462,7 @@ no_death_date <- no_death_date |>
 
 ```
 
-```{r}
+```{r echo = FALSE}
 
 oldest_people <- no_death_date |>
   slice_max(age)
@@ -438,24 +477,40 @@ one_oldest_person <- oldest_people |>
 
 ```
 
+With this new filtered data, there are `{r} oldest_people_count` people that are (or would be) 116 years old, one of which is `{r} one_oldest_person`. Given that some information is missing from the data set, it is unclear based on the data we have who is actually the current oldest living person in the data.
+
+
 Question #3: There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
 
--   **NOT SURE I DID THIS RIGHT**
+IMDb provides average ratings for titles based on votes from IMDb users, these ratings are out of a possible 10 (with 10/10 being the highest possible score). Now, let’s take a look at the data set and find out which titles have received a perfect 10/10 average rating on IMDb.
 
 ```{r}
+
+#| code-fold: true
 
 basics_ratings <- inner_join(TITLE_BASICS, TITLE_RATINGS, by = 'tconst')
 
 perfect <- basics_ratings |>
-  filter(averageRating == 10)
+  filter(averageRating == 10) |>
+  arrange(desc(numVotes))
 
-perfect_num <- perfect |>
+perfect_count <- perfect |>
   summarize(total = n()) |>
   pull(total)
 
+perfect |>
+  select(primaryTitle, titleType, averageRating, numVotes) |>
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 5))
+  
+
 ```
 
+There are `{r} perfect_count` listed TV episodes that have a perfect 10/10 rating in the data set, however, only one of these titles has an overwhelming number of votes, over 200,000 ratings.
+
 ```{r}
+
+#| code-fold: true
 
 perfect_rating <- basics_ratings |>
   filter(titleType == "tvEpisode",
@@ -470,10 +525,19 @@ perfect_episode_series <- TITLE_BASICS |>
 cat("Series: ", perfect_episode_series$primaryTitle, "\nEpisode Name: ", perfect_episode$primaryTitle, "\nSeason: ", perfect_episode$seasonNumber, "\nEpisode: ", perfect_episode$episodeNumber)
 
 ```
+From Breaking Bad, season 5 episode 14, titled “Ozymandias” garnered a 10/10 perfect rating with 228,900 votes. This was the show's third to last episode, which had overwhelmingly positive feedback from audiences. Not only did this episode score high ratings on over 200,000 votes but, Dan Peeke from Screen Rant says “Ozymandias” is regarded as the series’ best episode and might even be the best episode in all of television history.[^2]
+
 
 Question #4: What four projects is the actor Mark Hamill most known for?
 
+Mark Hamill, a 73-year old American actor, has been part of many movies and shows over the course of his career. However, there were a slew of movies that highlighted his career. The four titles he is most known for are: "Star Wars: Episode IV - A New Hope", "Star Wars: Episode VIII - The Last Jedi", "Star Wars: Episode V - The Empire Strikes Back", and "Star Wars: Episode VI - Return of the Jedi". Hamill is best known for his role as Luke Skywalker in the Star Wars franchise (both the original and sequel trilogies).
+
+
 ```{r}
+
+#| code-fold: true
+
+# knownForTitles column has multiple values within one cell, need to split the information into separate records
 
 NAME_BASICS_split <- NAME_BASICS |> 
   separate_longer_delim(knownForTitles, ",")
@@ -481,6 +545,8 @@ NAME_BASICS_split <- NAME_BASICS |>
 ```
 
 ```{r}
+
+#| code-fold: true
 
 mark_hamill <- NAME_BASICS_split |>
   filter(primaryName == "Mark Hamill")
@@ -493,7 +559,11 @@ print(mark_hamill_projects$primaryTitle)
 
 Question #5: What TV series, with more than 12 episodes, has the highest *average* rating?
 
+The IMDb data set not only includes information on films, but TV series as well. So, to take a closer look at some of the most successful TV series, let's consider only those with more than 12 episodes.
+
 ```{r}
+
+#| code-fold: true
 
 tv_series_12 <- inner_join(TITLE_EPISODES, TITLE_BASICS, join_by(parentTconst == tconst)) |> 
   inner_join(TITLE_RATINGS, join_by(parentTconst == tconst)) |>
@@ -502,10 +572,6 @@ tv_series_12 <- inner_join(TITLE_EPISODES, TITLE_BASICS, join_by(parentTconst ==
 tv_series_12_ID <- tv_series_12 |>
   select(parentTconst) |>
   unique()
-
-```
-
-```{r}
 
 high_rated_series <- inner_join(tv_series_12_ID, TITLE_BASICS, join_by(parentTconst == tconst)) |>
   inner_join(TITLE_RATINGS, join_by(parentTconst == tconst)) |>
@@ -516,12 +582,18 @@ print(high_rated_series$primaryTitle)
 print(high_rated_series$averageRating)
 
 ```
+After filtering out the data, and sorting by average ratings, I found that a weekly news program called `{r} high_rated_series$primaryTitle` had the highest rating (amongst series with more than 12 episodes) with an average rating of `{r} high_rated_series$averageRating`.
+
 
 Question #6: The TV series *Happy Days* (1974-1984) gives us the common idiom [“jump the shark”](https://en.wikipedia.org/wiki/Jumping_the_shark). The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality.
 
 Is it true that episodes from later seasons of *Happy Days* have lower average ratings than the early seasons?
 
+Since the controversial episode occurred in the fifth season, I'd like to compare the average ratings of seasons 1-5 against the average ratings of seasons 6-11. To determine whether the quality issue after season 5 was true for *Happy Days*, I took the average of all the episode ratings from seasons 1-5 versus the average of all the episode ratings from seasons 6-11.
+
 ```{r}
+
+#| code-fold: true
 
 happy_days_ID <- TITLE_BASICS |>
   filter(originalTitle == "Happy Days", startYear == 1974) |>
@@ -545,28 +617,47 @@ after_5 <- happy_days_avg_ratings |>
   filter(after_s5) |>
   pull(average)
 
+cat("Before: ", up_to_5)
+cat("\nAfter: ", after_5)
+
 ```
+The average rating for episodes up to and including season 5 was roughly 7.47 versus the average rating of 6.87 after season 5. Based on our data, after season 5, the show did experience a decrease in their average ratings for their episodes, though maybe not as drastic as we may have initially thought.
+
 
 ## Quantifying Success
 
-### Task #3
+By the end of the project, we would like to propose successful movies. Before doing so, we need to have a success measure beyond what IMDb has already provided. We can assume that a successful title would be of high quality (high average rating) and has gained a broad awareness by IMDb users (large number of votes). So, a success metric combining these two metrics would be logical.
 
-```{r}
-
-TITLE_RATINGS <- TITLE_RATINGS |>
-  mutate(success = (averageRating / max(averageRating)) * sqrt(numVotes / max(numVotes)))
-
-max_rating <- max(TITLE_RATINGS$averageRating)
-
-max_votes <- max(TITLE_RATINGS$numVotes)
-
-```
+For my success metric, I decided to normalize the average rating and number of votes to create an index (ranging from 0 to 1) allowing for a simpler and holistic comparison for each of the movies. I wanted to account for both these values in my success metric. However, I noticed the drastic differences in the number of votes for certain movies. So, to mitigate this observation, I included a square root function for the votes proportion. Below is my success metric calculation:
 
 $$
 
 success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{max(numVotes)})
 
 $$
+Below is the code used to create a new `success` column with my newly defined success metric from above.
+
+```{r}
+
+#| code-fold: true
+
+TITLE_RATINGS <- TITLE_RATINGS |>
+  mutate(success = (averageRating / max(averageRating)) * sqrt(numVotes / max(numVotes)))
+
+```
+
+
+Before proceeding with further analysis, it is important to validate the success metric and ensure that it aligns appropriately with the movies in the data set. So, I will be answering the following questions to provide some validation on my proposed metric.
+
+:::{.callout-tip}
+Below are some questions I will be answering to provide some validation on the proposed success metric.
+1. Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
+2. Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
+3. Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
+4. Perform at least one other form of ‘spot check’ validation.
+5. Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value `v` such that movies above `v` are all “solid” or better.
+:::
+
 
 Question #1: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
 
@@ -875,7 +966,38 @@ successful_movies_split_genres |>
   xlab("Decade") + 
   ylab("Number of Successes") + 
   ggtitle("Number of Successful Movies per Decade by Genre") + 
-  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma)
+
+```
+
+```{r}
+
+successful_movies_split_genres |>
+  filter(genres == "Sci-Fi") |>
+  group_by(decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Successful Sci-Fi Movies by Decade",
+       x = "Decade",
+       y = "Total")
+
+
+```
+
+```{r}
+
+successful_movies_split_genres |>
+  filter(genres == "Sci-Fi") |>
+  group_by(decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total)) + 
+  geom_line() +
+  geom_point() +
+  xlab("Decade") + 
+  ylab("Number of Successes") + 
+  ggtitle("Number of Successful Movies per Decade by Genre") + 
   scale_y_continuous(label=scales::comma)
 
 ```
@@ -926,7 +1048,6 @@ names_movies_ratings_join <- left_join(NAME_BASICS_split, movies_ratings_success
 
 ```
 
-
 ```{r}
 
 # counts the remaining total "knownForTitles" per person (after drop NA)
@@ -939,7 +1060,6 @@ person_movie_count <- names_movies_ratings_join |>
 
 ```
 
-
 ```{r}
 
 # people with an average success of 0.2 or higher on their movies
@@ -950,7 +1070,6 @@ names_success_movies <- left_join(names_movies_ratings_join, person_movie_count,
   
 
 ```
-
 
 ```{r}
 
@@ -963,7 +1082,6 @@ names_success_movies_split <- names_success_movies |>
 
 
 ```
-
 
 ```{r}
 
@@ -982,8 +1100,6 @@ names_success_movies_split <- names_success_movies |>
 
 
 ```
-
-
 
 ```{r}
 
@@ -1016,7 +1132,13 @@ act_direct_pairs_sci_fi <- inner_join(act_scifi_names_success,
 
 ```
 
+```{r}
 
+steven_spielberg_movies |>
+  select(primaryTitle, success)
+
+
+```
 
 ```{r}
 
@@ -1030,8 +1152,6 @@ steven_spielberg_rank <- direct_scifi_names_success |>
 steven_spielberg$average_person_success
 
 ```
-
-
 
 ```{r fig.width = 10, fig.height = 4}
 
@@ -1072,7 +1192,6 @@ steven_spielberg_star_actors <- left_join(names_success_movies_split,
 
 ```
 
-
 ```{r fig.width = 15, fig.height = 6}
 
 indiana_jones_movies <- movies_ratings_success |>
@@ -1109,7 +1228,7 @@ indiana_jones_movies |>
 
 ```{r}
 
-scifi_actors <- names_success_movies |>
+scifi_young_actors <- names_success_movies |>
   separate_longer_delim(primaryProfession, ",") |>
   group_by(nconst) |>
   mutate(profession = first(primaryProfession)) |>
@@ -1126,40 +1245,74 @@ scifi_actors <- names_success_movies |>
 
 ```
 
-
 ```{r}
 
-movies_ratings_success |>
-  filter(primaryTitle == "The Day After Tomorrow") 
+tom_holland_known_for <- names_success_movies |>
+  filter(primaryName == "Tom Holland") |>
+  select(primaryTitle, genres, success)
 
-movies_ratings_success |>
-  filter(primaryTitle == "Independence Day" & startYear == 1996)
-
-movies_ratings_success |>
-  filter(primaryTitle == "Back to the Future")
+holland_ford_spielberg <- names_success_movies |>
+  filter(primaryName == "Tom Holland" | primaryName == "Harrison Ford" | primaryName == "Steven Spielberg") |>
+  select(primaryName, average_person_success) |>
+  unique()
 
 
 ```
 
+```{r}
+
+scifi_successful_movies <- successful_movies_split_genres |>
+  filter(genres == "Sci-Fi",
+         startYear <= 2000) |>
+  arrange(desc(success))
+
+```
+
+```{r}
+
+back_to_the_future <- movies_ratings_success |>
+  filter(primaryTitle == "Back to the Future") |>
+  select(primaryTitle, startYear, genres, averageRating, numVotes, success)
+
+back_to_the_future_franchise <- movies_ratings_success |>
+  filter(str_detect(primaryTitle, "Back to the Future")) |>
+  select(primaryTitle, startYear, genres, averageRating, numVotes, success)
+
+```
+
+```{r}
+
+names_success_movies_split |>
+  filter(primaryName == "Lea Thompson")
 
 
+```
 
+```{r}
 
+original_contributors_bttf <- names_movies_ratings_join |>
+  filter(primaryTitle == "Back to the Future") |>
+  filter(primaryName %in% c("Robert Zemeckis", 
+                            "Bob Gale", 
+                            "Michael J. Fox", 
+                            "Christopher Lloyd", 
+                            "Lea Thompson")) |>
+  select(primaryName, birthYear, deathYear) |>
+  unique() |>
+  mutate(age = 2024 - birthYear)
 
+```
 
+```{r}
 
+successful_movies_split_genres |>
+  filter(genres == "Sci-Fi") |>
+  group_by(decade) |>
+  summarize(total = n())
 
+```
 
-
-
-
-
-
-
-
-
-
-
-
+[^1]: More information on the history of Hollywood can be found at: https://www.britannica.com/place/Hollywood-California
+[^2]: Screen Rant opinion article about Breaking Bad 'Ozymandias' episode, written by Dan Peeke: https://screenrant.com/breaking-bad-reasons-ozymandias-was-best-episode-the-fly-was-worst/
 
 
