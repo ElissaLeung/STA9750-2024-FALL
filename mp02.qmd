@@ -1,6 +1,6 @@
 ---
 title: "Mini Project #02: The Business of Show Business"
-author: "Elissa"
+author: "Elissa Leung"
 editor: visual
 ---
 
@@ -160,7 +160,7 @@ To restrict our attention to more well-known people in the entertainment industr
 NAME_BASICS <- NAME_BASICS |> 
     filter(str_count(knownForTitles, ",") > 1)
 
-NAME_BASICS |>
+sample_n(NAME_BASICS, 100) |>
   DT::datatable(rownames = FALSE, 
                 options = list(pageLength = 5))
 
@@ -206,7 +206,7 @@ TITLE_RATINGS <- TITLE_RATINGS |>
     filter(numVotes >= 100)
 
 
-head(TITLE_RATINGS) |>
+sample_n(TITLE_RATINGS, 100) |>
   DT::datatable(rownames = FALSE, 
                 options = list(pageLength = 5))
 
