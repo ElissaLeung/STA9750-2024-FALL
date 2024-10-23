@@ -6,7 +6,7 @@ editor: visual
 
 ## Introduction
 
-![Movie Image](../assets/mp02/movie_industry.jpg)
+![](movie_industry.jpg)
 
 Hollywood first launched with the completion of the silent film *The Count of Monte Cristo* in 1908. Shortly after, Hollywood’s first studio was created, and the rest is history.[^1] Since then, Hollywood has grown to be synonymous with the entertainment industry. As the film and television industries progressed with the advancement of technology, so did the demands for more creative storytelling and diverse entertainment.
 
@@ -18,14 +18,8 @@ We will be utilizing the [Internet Movie Database (IMDb)](https://www.imdb.com/)
 
 The below code will download and load these files from IMDb into R, which results in a total of 6 data tables: `NAME_BASICS`, `TITLE_BASICS`, `TITLE_EPISODES`, `TITLE_RATINGS`, `TITLE_CREW`, `TITLE_PRINCIPALS`.
 
-```{r}
-
+```{r, label = 'imdb_name_basics', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| label: 'imdb_name_basics'
-#| message: false 
-#| warning: false
-#| cache: true
 
 get_imdb_file <- function(fname){
     BASE_URL <- "https://datasets.imdbws.com/"
@@ -42,69 +36,40 @@ NAME_BASICS      <- get_imdb_file("name.basics")
 
 ```
 
-```{r}
-
+```{r, label = 'imdb_title_basics', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| label: 'imdb_title_basics'
-#| message: false 
-#| warning: false
-#| cache: true
 
 TITLE_BASICS     <- get_imdb_file("title.basics")
 ```
 
-```{r}
-
+```{r, label = 'imdb_title_episode', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| label: 'imdb_title_episode'
-#| message: false 
-#| warning: false
-#| cache: true
 
 TITLE_EPISODES   <- get_imdb_file("title.episode")
 ```
 
-```{r}
-
+```{r, label = 'imdb_title_ratings', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| label: 'imdb_title_ratings'
-#| message: false 
-#| warning: false
-#| cache: true
 
 TITLE_RATINGS    <- get_imdb_file("title.ratings")
 ```
 
-```{r}
-
+```{r, label = 'imdb_title_crew', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| label: 'imdb_title_crew'
-#| message: false 
-#| warning: false
-#| cache: true
 
 TITLE_CREW       <- get_imdb_file("title.crew")
 ```
 
-```{r}
-
+```{r, label = 'imdb_title_principals', message = FALSE, warning = FALSE, cache = FALSE}
 #| code-fold: true
-
-#| label: 'imdb_title_principals'
-#| message: false 
-#| warning: false
-#| cache: false
 
 TITLE_PRINCIPALS <- get_imdb_file("title.principals")
 ```
 
 Below are a few packages that will be useful for our IMDb entertainment data analysis.
 
-```{r}
+```{r echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
+#| code-fold: true
 
 if(!require("dplyr")) install.packages("dplyr")
 if(!require("tidyverse")) install.packages("tidyverse")
@@ -153,8 +118,7 @@ Since our data is incredibly large, we need to take a closer look at the data to
 
 To restrict our attention to more well-known people in the entertainment industry, we will only keep those that have more than 1 "known for" credit.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
 
 NAME_BASICS <- NAME_BASICS |> 
@@ -168,8 +132,7 @@ sample_n(NAME_BASICS, 100) |>
 
 Additionally, taking a look at the distribution of the amount of votes per title, we find that the distribution is heavily skewed right, indicating a significant number of titles with less than 100 votes.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 TITLE_RATINGS |>
@@ -186,8 +149,7 @@ TITLE_RATINGS |>
 
 Breaking this down a little further, we find that nearly 75% of the titles from the data set have less than 100 ratings.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 TITLE_RATINGS |>
@@ -198,8 +160,7 @@ TITLE_RATINGS |>
 
 So, to prevent our computers from working with such massive files, let's focus only on titles with more than 100 ratings. After dropping these records, we greatly reduce the size of our data set.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
 
 TITLE_RATINGS <- TITLE_RATINGS |>
@@ -214,13 +175,8 @@ sample_n(TITLE_RATINGS, 100) |>
 
 We also need to reflect this change on our remaining `TITLE_*` data tables using `semi_join`s.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
-
-#| message: false 
-#| warning: false
-#| cache: true
 
 TITLE_BASICS <- TITLE_BASICS |>
     semi_join(TITLE_RATINGS, 
@@ -294,8 +250,7 @@ glimpse(TITLE_PRINCIPALS)
 
 ```
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
 
 # NAME_BASICS: birthYear and deathYear need to be corrected to numeric values
@@ -359,8 +314,7 @@ Question #1: How many movies are in our data set? How many TV series? How many T
 
 As a preliminary step, it is useful to take a closer look at the data set to see the amount of data remaining after cleaning such a large data set. More specifically, let's figure out how many movies, TV series and TV episodes remain in our data set. Before approaching this question, it is important to understand the existing types of titles in our data set.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 unique(TITLE_BASICS$titleType)
@@ -369,8 +323,7 @@ unique(TITLE_BASICS$titleType)
 
 Now that we know how the title types are categorized, we can filter out our data set to determine the count of each type.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 # Total titles by title type
@@ -422,8 +375,7 @@ total_people <- NAME_BASICS |>
 
 In the NAME_BASICS table, we have information on `{r} prettyNum(total_people, big.mark = ",")` people in the data set. However, to find prospective actors/actresses and directors for new movies, it’s important to filter our data down to those that are still alive. By filtering the `deathYear` column to only show `NA` values, it removes records of people with listed death years (these are people we know for sure are no longer alive). 
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 no_death_date <- NAME_BASICS |>
@@ -452,8 +404,7 @@ The remaining data set contains `{r} prettyNum(no_death_date_total, big.mark = "
 
 So, after a little extra research, I found that the current oldest living person is 116 years old ([Tomiko Itooka](https://en.wikipedia.org/wiki/Tomiko_Itooka) from Japan), so I filtered down the data even further to only contain people who would be at most 116 years old based on the information given. 
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 no_death_date <- no_death_date |>
@@ -484,8 +435,7 @@ Question #3: There is one TV Episode in this data set with a perfect 10/10 ratin
 
 IMDb provides average ratings for titles based on votes from IMDb users, these ratings are out of a possible 10 (with 10/10 being the highest possible score). Now, let’s take a look at the data set and find out which titles have received a perfect 10/10 average rating on IMDb.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 basics_ratings <- inner_join(TITLE_BASICS, TITLE_RATINGS, by = 'tconst')
@@ -508,8 +458,7 @@ perfect |>
 
 There are `{r} perfect_count` listed TV episodes that have a perfect 10/10 rating in the data set, however, only one of these titles has an overwhelming number of votes, over 200,000 ratings.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 perfect_rating <- basics_ratings |>
@@ -533,8 +482,7 @@ Question #4: What four projects is the actor Mark Hamill most known for?
 Mark Hamill, a 73-year old American actor, has been part of many movies and shows over the course of his career. However, there were a slew of movies that highlighted his career. The four titles he is most known for are: "Star Wars: Episode IV - A New Hope", "Star Wars: Episode VIII - The Last Jedi", "Star Wars: Episode V - The Empire Strikes Back", and "Star Wars: Episode VI - Return of the Jedi". Hamill is best known for his role as Luke Skywalker in the Star Wars franchise (both the original and sequel trilogies).
 
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 # knownForTitles column has multiple values within one cell, need to split the information into separate records
@@ -544,8 +492,7 @@ NAME_BASICS_split <- NAME_BASICS |>
 
 ```
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 mark_hamill <- NAME_BASICS_split |>
@@ -561,8 +508,7 @@ Question #5: What TV series, with more than 12 episodes, has the highest *averag
 
 The IMDb data set not only includes information on films, but TV series as well. So, to take a closer look at some of the most successful TV series, let's consider only those with more than 12 episodes.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 tv_series_12 <- inner_join(TITLE_EPISODES, TITLE_BASICS, join_by(parentTconst == tconst)) |> 
@@ -591,8 +537,7 @@ Is it true that episodes from later seasons of *Happy Days* have lower average r
 
 Since the controversial episode occurred in the fifth season, I'd like to compare the average ratings of seasons 1-5 against the average ratings of seasons 6-11. To determine whether the quality issue after season 5 was true for *Happy Days*, I took the average of all the episode ratings from seasons 1-5 versus the average of all the episode ratings from seasons 6-11.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 happy_days_ID <- TITLE_BASICS |>
@@ -637,15 +582,15 @@ success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{m
 $$
 Below is the code used to create a new `success` column with my newly defined success metric from above.
 
-```{r}
-
+```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
 TITLE_RATINGS <- TITLE_RATINGS |>
-  mutate(success = (averageRating / max(averageRating)) * sqrt(numVotes / max(numVotes)))
+  mutate(success = round((averageRating / max(averageRating)) * sqrt(numVotes / max(numVotes)), 3))
 
 ```
 
+### Success Metric Validation
 
 Before proceeding with further analysis, it is important to validate the success metric and ensure that it aligns appropriately with the movies in the data set. So, I will be answering the following questions to provide some validation on my proposed metric.
 
@@ -658,48 +603,65 @@ Below are some questions I will be answering to provide some validation on the p
 5. Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value `v` such that movies above `v` are all “solid” or better.
 :::
 
-
 Question #1: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
 
-```{r}
+First, I would like to check that the top 5 movies based on my success metric were actually box office successes. Before tackling this question, I merged the two tables `TITLE_RATINGS` and `TITLE_BASICS` into a new data table `movies_ratings_success` so that I could work directly with all the title information alongside their IMDb metrics and success indices.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# movies_ratings_success combines title_basics with title_ratings, to include metrics beside their respective movie titles and other information
 
 movies_ratings_success <- full_join(TITLE_RATINGS, TITLE_BASICS, by = 'tconst') |>
   filter(titleType == "movie")
 
 ```
 
-```{r}
+These top 5 movies were The Shawshank Redemption, The Dark Knight, Inception, Fight Club, and Pulp Fiction. The Shawshank Redemption began as a box office flop, failing to cover its original budget, however, this film has grown in popularity over time, especially with the movie’s release into a regular fixture on TV.[^3] Fight Club also struggled on its initial release into the theaters, but became a popular film after its DVD release.[^4] The remaining three films (The Dark Knight, Inception, and Pulp Fiction) were all box office hits and continued with their success even after leaving theaters.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 top_5_movies <- movies_ratings_success |>
   arrange(desc(success)) |>
   slice_max(success, n = 5)
 
-print(top_5_movies$primaryTitle)
+top_5_movies |>
+  select(primaryTitle, averageRating, numVotes, success) |>
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 5))
 
 ```
 
 Question #2: Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
 
-```{r}
+Next, I wanted to choose 3 movies with a large amount of IMDb votes that scored relatively low on my success metric, and check that they were low quality films. Before beginning, I wanted to assess the distribution of the `numVotes` and `success` columns to determine what would be considered as a "large number" and a "poor score".
 
-max(movies_ratings_success$numVotes)
-min(movies_ratings_success$numVotes)
-median(movies_ratings_success$numVotes)
-mean(movies_ratings_success$numVotes)
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# distribution of the number of votes per movie
+
+quantile(movies_ratings_success$numVotes)
+
+```
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# distribution of the success index per movie
+
+quantile(movies_ratings_success$success)
 
 ```
 
-```{r}
 
-min(movies_ratings_success$success)
-max(movies_ratings_success$success)
-median(movies_ratings_success$success)
-mean(movies_ratings_success$success)
+For this question, I decided to filter my data table to include only movies that exceeded the 3rd quartile number of votes `{r} quantile(movies_ratings_success$numVotes, 0.75)` with a success rate lower than the 1st quartile success indices `{r} quantile(movies_ratings_success$success, 0.25)`.
 
-```
+The lowest three were: Nyay: The Justice, 2025 - The World Enslaved by a Virus, and Santa and the Ice Cream Bunny. All three of these movies scored low on the success and had low average ratings from IMDb. There was limited information on the movie Nyay: The Justice, but from what was available, it seemed that this movie didn’t perform well at all. Rotten Tomatoes provided some additional insight on the two remaining movies. Santa and the Ice Cream Bunny scored a 12% on the popcornmeter (audience vote metric) out of a scale of 100 and The World Enslaved by a Virus scored a 0% on the popcornmeter from Rotten Tomatoes.
 
-```{r}
 
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 low_success_3 <- movies_ratings_success |>
   filter(numVotes >= quantile(movies_ratings_success$numVotes, 0.75) & success <=  quantile(movies_ratings_success$success, 0.25)
@@ -707,37 +669,62 @@ low_success_3 <- movies_ratings_success |>
   arrange(success) |>
   slice_head(n = 3)
 
-print(low_success_3$primaryTitle)
+low_success_3 |>
+  select(primaryTitle, averageRating, numVotes, success) |>
+  DT::datatable(rownames = FALSE)
 
 ```
 
 Question #3: Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
 
-```{r}
 
-steven_spielberg_basics <- NAME_BASICS_split |>
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# grabbing Steven Spielberg's NAME_BASICS information, also want to ensure that there's only one Steven Spielberg
+
+steven_spielberg_basics <- NAME_BASICS |>
   filter(primaryName == "Steven Spielberg")
+  
+# want to check the ratings of all of Spielberg's works
+
+steven_spielberg_works <- left_join(steven_spielberg_basics, TITLE_PRINCIPALS, by = 'nconst') |>
+  left_join(movies_ratings_success, by = 'tconst') |>
+  select(tconst, primaryTitle, startYear, averageRating, numVotes, success) |>
+  drop_na() |>
+  unique()
 
 ```
 
-```{r}
 
-steven_spielberg_movies <- left_join(steven_spielberg_basics, TITLE_BASICS, join_by(knownForTitles == tconst)) |>
-  left_join(TITLE_RATINGS, join_by(knownForTitles == tconst))
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
-steven_spielberg_movies
+steven_spielberg_works |>
+  ggplot(aes(x=success)) + 
+  geom_histogram(bins=30) +
+  geom_vline(xintercept = quantile(movies_ratings_success$success, 0.75), 
+             linetype = "dashed",
+             color = "red", 
+             linewidth = 1) +
+  xlab("Success") + 
+  ylab("Number of Titles") + 
+  ggtitle("Distribution of Success for Steven Spielberg's Movies") + 
+  theme_bw() + 
+  scale_x_log10(label=scales::comma) + 
+  scale_y_continuous(label=scales::comma)
+  
 
 ```
+
+
 
 Question #4: Perform at least one other form of ‘spot check’ validation.
 
--   Look for the top 5 most grossing movies of all time and check that it's success metric reflects the same success.
+I decided for my last ‘spot check’ validation I would check the success metric of the top 5 most grossing movies of all time from [IMDb’s Top Lifetime Grosses - Box Office Mojo](https://www.boxofficemojo.com/chart/top_lifetime_gross/?area=XWW), to ensure that its box office success is reflected in my success index. These 5 movies are *Avatar*, *Avengers: Endgame*, *Avatar: The Way of Water*, *Titanic*, and *Star Wars: Episode VII - The Force Awakens*. 
 
-    -   Avatar, Avengers: Endgame, Avatar: The Way of Water, Titanic, Star Wars: Episode VII - The Force Awakens
-
-#### Not sure if this really tells me anything
-
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 avatar_success <- movies_ratings_success |>
   filter(primaryTitle == "Avatar", startYear == 2009) |>
@@ -763,9 +750,12 @@ star_wars_success <- movies_ratings_success |>
 
 Question #5: Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value v such that movies above v are all “solid” or better.
 
-#### Temporary: 0.2
+To drive our analysis on successful movies, we will need to determine a numerical threshold for our success metric that will ensure these films are "solid" or better.
 
-```{r}
+Before assessing possible thresholds for the success metric, let’s take a look at the distribution of success for the movie data. About 75% of movies score really low on the success scale with indices less than `{r} quantile(movies_ratings_success$success, 0.75)`. 
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 movies_ratings_success |>
     ggplot(aes(x=success)) + 
@@ -779,24 +769,27 @@ movies_ratings_success |>
 
 ```
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
-movies_ratings_success |>
-  pull(success) |>
-  quantile()
+quantile(movies_ratings_success$success)
 
 ```
 
-```{r}
+To be an incredibly successful movie, I believe that they have to score better than a large majority of movies, but still have a generally high average rating (at least above 0.5). Initially I chose a success measure of v = 0.1. Upon further observations, I noticed that a threshold of 0.1 still kept movies with average ratings as low as 3.8. 
 
-movies_ratings_success |>
-  summarize(n())
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 movies_ratings_success |>
   filter(success >= 0.1) |>
-  summarize(n())
+  arrange(averageRating) |>
+  slice_head(n = 10) |>
+  DT::datatable(rownames = FALSE,
+                options = list(pageLength = 5))
 
 ```
+Then after further adjustment and considering various numeric thresholds for my success metric, I decided on a success threshold of v = 0.2.
 
 ### Task #4
 
@@ -1134,14 +1127,6 @@ act_direct_pairs_sci_fi <- inner_join(act_scifi_names_success,
 
 ```{r}
 
-steven_spielberg_movies |>
-  select(primaryTitle, success)
-
-
-```
-
-```{r}
-
 steven_spielberg <- direct_scifi_names_success |>
   filter(primaryName == "Steven Spielberg")
 
@@ -1314,5 +1299,9 @@ successful_movies_split_genres |>
 
 [^1]: More information on the history of Hollywood can be found at: https://www.britannica.com/place/Hollywood-California
 [^2]: Screen Rant opinion article about Breaking Bad 'Ozymandias' episode, written by Dan Peeke: https://screenrant.com/breaking-bad-reasons-ozymandias-was-best-episode-the-fly-was-worst/
+[^3]: More on The Shawshank Redemption’s rocky road to becoming a classic film: https://www.bbc.com/culture/article/20240919-the-shawshank-redemptions-path-from-flop-to-classic
+[^4]: Fight Club’s trek to becoming a classic film: https://screenrant.com/how-much-fight-club-made-box-office-adjusted-inflation/#:~:text=Summary,advertising%20and%20box%20office%20success.
+
+
 
 
