@@ -10,6 +10,8 @@ editor: visual
 
 Hollywood first launched with the completion of the silent film *The Count of Monte Cristo* in 1908. Shortly after, Hollywood’s first studio was created, and the rest is history.[^1] Since then, Hollywood has grown to be synonymous with the entertainment industry. As the film and television industries progressed with the advancement of technology, so did the demands for more creative storytelling and diverse entertainment.
 
+[^1]: More information on the history of Hollywood can be found at: https://www.britannica.com/place/Hollywood-California
+
 Hollywood development executives are tasked with developing these new and creative movie ideas. Historically, these executives relied on adapting existing material like novels, true stories, or intellectual property (IP). However, this traditional approach has faced criticism by insiders and viewers for its reliance on pre-existing sources. The goal of this project is to develop these data-driven ideas to inspire new movies.
 
 We will be utilizing the [Internet Movie Database (IMDb)](https://www.imdb.com/) to drive our data-driven insights on the entertainment industry. More specifically, we will use the data sets from the [IMDb non-commercial release](https://datasets.imdbws.com/). With this data, we hope to analyze the significant characteristics of successful films, discover successful filmmakers and actors, and explore unique insights from the entertainment industry.
@@ -75,7 +77,7 @@ if(!require("dplyr")) install.packages("dplyr")
 if(!require("tidyverse")) install.packages("tidyverse")
 if(!require("DT")) install.packages("DT")
 if(!require("ggplot2")) install.packages("ggplot2")
-if(!require("pals")) install.packages("pals")
+if(!require("RColorBrewer")) install.packages("RColorBrewer")
 if(!require("forcats")) install.packages("forcats")
 if(!require("stringr")) install.packages("stringr")
 
@@ -83,32 +85,9 @@ library(dplyr)
 library(tidyverse)
 library(DT)
 library(ggplot2)
-library(pals) # different color palette options
+library(RColorBrewer) # different color palette options
 library(forcats) # grouping into an "other" category
 library(stringr) # filtering on strings
-
-```
-
-```{r echo = FALSE}
-
-saveRDS(NAME_BASICS, "NAME_BASICS.rds")
-saveRDS(TITLE_BASICS, "TITLE_BASICS.rds")
-saveRDS(TITLE_EPISODES, "TITLE_EPISODES.rds")
-saveRDS(TITLE_RATINGS, "TITLE_RATINGS.rds")
-saveRDS(TITLE_CREW, "TITLE_CREW.rds")
-saveRDS(TITLE_PRINCIPALS, "TITLE_PRINCIPALS.rds")
-
-
-```
-
-```{r echo = FALSE}
-
-NAME_BASICS <- readRDS("NAME_BASICS.rds")
-TITLE_BASICS <- readRDS("TITLE_BASICS.rds")
-TITLE_EPISODES <- readRDS("TITLE_EPISODES.rds")
-TITLE_RATINGS <- readRDS("TITLE_RATINGS.rds")
-TITLE_CREW <- readRDS("TITLE_CREW.rds")
-TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS.rds")
 
 ```
 
@@ -235,18 +214,18 @@ TITLE_PRINCIPALS <- readRDS("TITLE_PRINCIPALS_1.rds")
 
 ### Data Cleaning
 
-Before beginning any data analysis, it is crucial that the data is cleaned and transformed appropriately to avoid any issues further down the line. Upon first glimpse of the six IMDb data sets, there are columns with incorrect data types. Occasionally when data sets are imported and read in, numeric columns are misread as character (string) data. This is due to the "null" values being represented in a non-standard way. In the case of IMDb, null values are recorded as `\\N`, R does not read this as `NA` values, misunderstands this and reads these values in as strings. 
+Before beginning any data analysis, it is crucial that the data is cleaned and transformed appropriately to avoid any issues further down the line. Upon first glimpse of the six IMDb data sets, there are columns with incorrect data types. Occasionally when data sets are imported and read in, numeric columns are misread as character (string) data. This is due to the "null" values being represented in a non-standard way. In the case of IMDb, null values are recorded as `\\N`, R does not read this as `NA` values, misunderstands this and reads these values in as strings.
 
 Subsequently, these columns need to be adjusted to reflect its quantitative data or logical data for future analysis. To correct this, we can use a combination of the `mutate` command with the `as.numeric` (for quantitative values) or `as.logical` (for factor/level data) command to alter the type of column. Below are the columns I adjusted for each of the data tables from their previous character data type to either logical or numeric.
 
 ```{r echo = FALSE}
 
-glimpse(NAME_BASICS)
-glimpse(TITLE_BASICS)
-glimpse(TITLE_EPISODES)
-glimpse(TITLE_RATINGS)
-glimpse(TITLE_CREW)
-glimpse(TITLE_PRINCIPALS)
+# glimpse(NAME_BASICS)
+# glimpse(TITLE_BASICS)
+# glimpse(TITLE_EPISODES)
+# glimpse(TITLE_RATINGS)
+# glimpse(TITLE_CREW)
+# glimpse(TITLE_PRINCIPALS)
 
 ```
 
@@ -290,7 +269,7 @@ TITLE_PRINCIPALS <- TITLE_PRINCIPALS |>
 
 ```
 
-::: {.callout-note}
+::: callout-note
 There are a few columns in some of the data tables that combine several pieces of information into one cell separated with commas (e.g. `primaryProfession` and `knownForTitles` in the `NAME_BASICS` table). In order to break these values into multiple rows, we can use the `separate_longer_delim`. This will be a useful tool for later when we are taking a closer look at the data.
 :::
 
@@ -298,19 +277,18 @@ There are a few columns in some of the data tables that combine several pieces o
 
 Before starting any deep-dive analysis, it is important to do some preliminary exploration of our data tables to understand what information we are working with.
 
-::: {.callout-tip}
+::: callout-tip
 Below are some preliminary questions, we would like to answer as an initial exploration of our data tables.
-1. How many movies are in our data set? How many TV series? How many TV episodes?
-2. Who is the oldest living person in our data set?
-3. There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
-4. What four projects is the actor Mark Hamill most known for?
-5. What TV series, with more than 12 episodes, has the highest average rating?
-6. The TV series Happy Days (1974-1984) gives us the common idiom “jump the shark”. The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality.
 
-Is it true that episodes from later seasons of Happy Days have lower average ratings than the early seasons?
+1.  How many movies are in our data set? How many TV series? How many TV episodes?
+2.  Who is the oldest living person in our data set?
+3.  There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
+4.  What four projects is the actor Mark Hamill most known for?
+5.  What TV series, with more than 12 episodes, has the highest average rating?
+6.  The TV series Happy Days (1974-1984) gives us the common idiom “jump the shark”. The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality. Is it true that episodes from later seasons of Happy Days have lower average ratings than the early seasons?
 :::
 
-Question #1: How many movies are in our data set? How many TV series? How many TV episodes?
+**Question #1**: How many movies are in our data set? How many TV series? How many TV episodes?
 
 As a preliminary step, it is useful to take a closer look at the data set to see the amount of data remaining after cleaning such a large data set. More specifically, let's figure out how many movies, TV series and TV episodes remain in our data set. Before approaching this question, it is important to understand the existing types of titles in our data set.
 
@@ -361,8 +339,7 @@ cat('Total TV Episodes: ', prettyNum(total_tvEpisode, big.mark = ","))
 
 Our data set currently has information about `{r} prettyNum(total_movies, big.mark = ",")` movies (including television movies), `{r} prettyNum(total_tvSeries, big.mark = ",")` TV series (or shows), and `{r} prettyNum(total_tvEpisode, big.mark = ",")` television episodes (more specifically, these are TV series episodes).
 
-
-Question #2: Who is the oldest living person in our data set?
+**Question #2**: Who is the oldest living person in our data set?
 
 ```{r echo = FALSE}
 
@@ -372,8 +349,7 @@ total_people <- NAME_BASICS |>
 
 ```
 
-
-In the NAME_BASICS table, we have information on `{r} prettyNum(total_people, big.mark = ",")` people in the data set. However, to find prospective actors/actresses and directors for new movies, it’s important to filter our data down to those that are still alive. By filtering the `deathYear` column to only show `NA` values, it removes records of people with listed death years (these are people we know for sure are no longer alive). 
+In the NAME_BASICS table, we have information on `{r} prettyNum(total_people, big.mark = ",")` people in the data set. However, to find prospective actors/actresses and directors for new movies, it’s important to filter our data down to those that are still alive. By filtering the `deathYear` column to only show `NA` values, it removes records of people with listed death years (these are people we know for sure are no longer alive).
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -398,11 +374,9 @@ over_100 <- no_death_date |>
 
 ```
 
-
 The remaining data set contains `{r} prettyNum(no_death_date_total, big.mark = ",")` records. However, after creating an “age” column and observing these values, there are `{r} prettyNum(over_100, big.mark = ",")` people in the remaining data set that are over 100 years old, which seems highly unlikely.
 
-
-So, after a little extra research, I found that the current oldest living person is 116 years old ([Tomiko Itooka](https://en.wikipedia.org/wiki/Tomiko_Itooka) from Japan), so I filtered down the data even further to only contain people who would be at most 116 years old based on the information given. 
+So, after a little extra research, I found that the current oldest living person is 116 years old ([Tomiko Itooka](https://en.wikipedia.org/wiki/Tomiko_Itooka) from Japan), so I filtered down the data even further to only contain people who would be at most 116 years old based on the information given.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -430,8 +404,7 @@ one_oldest_person <- oldest_people |>
 
 With this new filtered data, there are `{r} oldest_people_count` people that are (or would be) 116 years old, one of which is `{r} one_oldest_person`. Given that some information is missing from the data set, it is unclear based on the data we have who is actually the current oldest living person in the data.
 
-
-Question #3: There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
+**Question #3**: There is one TV Episode in this data set with a perfect 10/10 rating and at least 200,000 IMDb ratings. What is it? What series does it belong to?
 
 IMDb provides average ratings for titles based on votes from IMDb users, these ratings are out of a possible 10 (with 10/10 being the highest possible score). Now, let’s take a look at the data set and find out which titles have received a perfect 10/10 average rating on IMDb.
 
@@ -474,13 +447,14 @@ perfect_episode_series <- TITLE_BASICS |>
 cat("Series: ", perfect_episode_series$primaryTitle, "\nEpisode Name: ", perfect_episode$primaryTitle, "\nSeason: ", perfect_episode$seasonNumber, "\nEpisode: ", perfect_episode$episodeNumber)
 
 ```
+
 From Breaking Bad, season 5 episode 14, titled “Ozymandias” garnered a 10/10 perfect rating with 228,900 votes. This was the show's third to last episode, which had overwhelmingly positive feedback from audiences. Not only did this episode score high ratings on over 200,000 votes but, Dan Peeke from Screen Rant says “Ozymandias” is regarded as the series’ best episode and might even be the best episode in all of television history.[^2]
 
+[^2]: Screen Rant opinion article about Breaking Bad 'Ozymandias' episode, written by Dan Peeke: https://screenrant.com/breaking-bad-reasons-ozymandias-was-best-episode-the-fly-was-worst/
 
-Question #4: What four projects is the actor Mark Hamill most known for?
+**Question #4**: What four projects is the actor Mark Hamill most known for?
 
 Mark Hamill, a 73-year old American actor, has been part of many movies and shows over the course of his career. However, there were a slew of movies that highlighted his career. The four titles he is most known for are: "Star Wars: Episode IV - A New Hope", "Star Wars: Episode VIII - The Last Jedi", "Star Wars: Episode V - The Empire Strikes Back", and "Star Wars: Episode VI - Return of the Jedi". Hamill is best known for his role as Luke Skywalker in the Star Wars franchise (both the original and sequel trilogies).
-
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -504,7 +478,7 @@ mark_hamill_projects <- left_join(mark_hamill, TITLE_BASICS, join_by(knownForTit
 print(mark_hamill_projects$primaryTitle)
 ```
 
-Question #5: What TV series, with more than 12 episodes, has the highest *average* rating?
+**Question #5**: What TV series, with more than 12 episodes, has the highest *average* rating?
 
 The IMDb data set not only includes information on films, but TV series as well. So, to take a closer look at some of the most successful TV series, let's consider only those with more than 12 episodes.
 
@@ -528,12 +502,10 @@ print(high_rated_series$primaryTitle)
 print(high_rated_series$averageRating)
 
 ```
-After filtering out the data, and sorting by average ratings, I found that a weekly news program called `{r} high_rated_series$primaryTitle` had the highest rating (amongst series with more than 12 episodes) with an average rating of `{r} high_rated_series$averageRating`.
 
+After filtering out the data, and sorting by average ratings, I found that a weekly news program called `{r} high_rated_series$primaryTitle` had the highest rating (among series with more than 12 episodes) with an average rating of `{r} high_rated_series$averageRating`.
 
-Question #6: The TV series *Happy Days* (1974-1984) gives us the common idiom [“jump the shark”](https://en.wikipedia.org/wiki/Jumping_the_shark). The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality.
-
-Is it true that episodes from later seasons of *Happy Days* have lower average ratings than the early seasons?
+**Question #6**: The TV series *Happy Days* (1974-1984) gives us the common idiom [“jump the shark”](https://en.wikipedia.org/wiki/Jumping_the_shark). The phrase comes from a controversial fifth season episode (aired in 1977) in which a lead character literally jumped over a shark on water skis. Idiomatically, it is used to refer to the moment when a once-great show becomes ridiculous and rapidly looses quality. Is it true that episodes from later seasons of *Happy Days* have lower average ratings than the early seasons?
 
 Since the controversial episode occurred in the fifth season, I'd like to compare the average ratings of seasons 1-5 against the average ratings of seasons 6-11. To determine whether the quality issue after season 5 was true for *Happy Days*, I took the average of all the episode ratings from seasons 1-5 versus the average of all the episode ratings from seasons 6-11.
 
@@ -566,8 +538,8 @@ cat("Before: ", up_to_5)
 cat("\nAfter: ", after_5)
 
 ```
-The average rating for episodes up to and including season 5 was roughly 7.47 versus the average rating of 6.87 after season 5. Based on our data, after season 5, the show did experience a decrease in their average ratings for their episodes, though maybe not as drastic as we may have initially thought.
 
+The average rating for episodes up to and including season 5 was roughly 7.47 versus the average rating of 6.87 after season 5. Based on our data, after season 5, the show did experience a decrease in their average ratings for their episodes, though maybe not as drastic as we may have initially thought.
 
 ## Quantifying Success
 
@@ -576,11 +548,10 @@ By the end of the project, we would like to propose successful movies. Before do
 For my success metric, I decided to normalize the average rating and number of votes to create an index (ranging from 0 to 1) allowing for a simpler and holistic comparison for each of the movies. I wanted to account for both these values in my success metric. However, I noticed the drastic differences in the number of votes for certain movies. So, to mitigate this observation, I included a square root function for the votes proportion. Below is my success metric calculation:
 
 $$
-
 success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{max(numVotes)})
-
 $$
-Below is the code used to create a new `success` column with my newly defined success metric from above.
+
+ Below is the code used to create a new `success` column with my newly defined success metric from above.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -594,16 +565,17 @@ TITLE_RATINGS <- TITLE_RATINGS |>
 
 Before proceeding with further analysis, it is important to validate the success metric and ensure that it aligns appropriately with the movies in the data set. So, I will be answering the following questions to provide some validation on my proposed metric.
 
-:::{.callout-tip}
+::: callout-tip
 Below are some questions I will be answering to provide some validation on the proposed success metric.
-1. Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
-2. Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
-3. Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
-4. Perform at least one other form of ‘spot check’ validation.
-5. Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value `v` such that movies above `v` are all “solid” or better.
+
+1.  Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
+2.  Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
+3.  Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
+4.  Perform at least one other form of ‘spot check’ validation.
+5.  Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value `v` such that movies above `v` are all “solid” or better.
 :::
 
-Question #1: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
+**Question #1**: Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
 
 First, I would like to check that the top 5 movies based on my success metric were actually box office successes. Before tackling this question, I merged the two tables `TITLE_RATINGS` and `TITLE_BASICS` into a new data table `movies_ratings_success` so that I could work directly with all the title information alongside their IMDb metrics and success indices.
 
@@ -619,6 +591,10 @@ movies_ratings_success <- full_join(TITLE_RATINGS, TITLE_BASICS, by = 'tconst') 
 
 These top 5 movies were The Shawshank Redemption, The Dark Knight, Inception, Fight Club, and Pulp Fiction. The Shawshank Redemption began as a box office flop, failing to cover its original budget, however, this film has grown in popularity over time, especially with the movie’s release into a regular fixture on TV.[^3] Fight Club also struggled on its initial release into the theaters, but became a popular film after its DVD release.[^4] The remaining three films (The Dark Knight, Inception, and Pulp Fiction) were all box office hits and continued with their success even after leaving theaters.
 
+[^3]: More on The Shawshank Redemption’s rocky road to becoming a classic film: https://www.bbc.com/culture/article/20240919-the-shawshank-redemptions-path-from-flop-to-classic
+
+[^4]: Fight Club’s trek to becoming a classic film: https://screenrant.com/how-much-fight-club-made-box-office-adjusted-inflation/#:\~:text=Summary,advertising%20and%20box%20office%20success.
+
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -633,7 +609,7 @@ top_5_movies |>
 
 ```
 
-Question #2: Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
+**Question #2**: Choose 3-5 movies with large numbers of IMDb votes that score poorly on your success metric and confirm that they are indeed of low quality.
 
 Next, I wanted to choose 3 movies with a large amount of IMDb votes that scored relatively low on my success metric, and check that they were low quality films. Before beginning, I wanted to assess the distribution of the `numVotes` and `success` columns to determine what would be considered as a "large number" and a "poor score".
 
@@ -645,6 +621,7 @@ Next, I wanted to choose 3 movies with a large amount of IMDb votes that scored 
 quantile(movies_ratings_success$numVotes)
 
 ```
+
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -654,11 +631,9 @@ quantile(movies_ratings_success$success)
 
 ```
 
+For this question, I decided to filter my data table to include only movies that exceeded the 3rd quartile number of votes `{r} prettyNum(quantile(movies_ratings_success$numVotes, 0.75), big.mark = ",")` votes with a success rate lower than the 1st quartile success indices `{r} quantile(movies_ratings_success$success, 0.25)`.
 
-For this question, I decided to filter my data table to include only movies that exceeded the 3rd quartile number of votes `{r} quantile(movies_ratings_success$numVotes, 0.75)` with a success rate lower than the 1st quartile success indices `{r} quantile(movies_ratings_success$success, 0.25)`.
-
-The lowest three were: Nyay: The Justice, 2025 - The World Enslaved by a Virus, and Santa and the Ice Cream Bunny. All three of these movies scored low on the success and had low average ratings from IMDb. There was limited information on the movie Nyay: The Justice, but from what was available, it seemed that this movie didn’t perform well at all. Rotten Tomatoes provided some additional insight on the two remaining movies. Santa and the Ice Cream Bunny scored a 12% on the popcornmeter (audience vote metric) out of a scale of 100 and The World Enslaved by a Virus scored a 0% on the popcornmeter from Rotten Tomatoes.
-
+The lowest three were: Santa and the Ice Cream Bunny, Ax 'Em, and 2025 - The World Enslaved by a Virus. All three of these movies scored low on the success and had low average ratings from IMDb. [Rotten Tomatoes](https://www.rottentomatoes.com/) provided some additional insight on these three movies. *Santa and the Ice Cream Bunny* scored a 12% on the popcornmeter (audience vote metric) out of a scale of 100, *Ax 'Em* scored a 36% on the popcornmeter, *2025 - The World Enslaved by a Virus* scored a 0% on the popcornmeter from Rotten Tomatoes. All of these movies scored generally low on this audience vote metric and thus confirms that these movies were of low quality.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -675,8 +650,9 @@ low_success_3 |>
 
 ```
 
-Question #3: Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
+**Question #3**: Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
 
+After researching some of the most prestigious directors in the movie business, I found Steven Spielberg among the most popular directors and decided to use his data as a validation source for my success metric. Taking a look at the distribution of success for his works in the past, I found that a large majority of his works score higher on the success index than about 75% of the entire movie data set. This is a good indication that Steven Spielberg’s work is typically more successful.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -690,12 +666,11 @@ steven_spielberg_basics <- NAME_BASICS |>
 
 steven_spielberg_works <- left_join(steven_spielberg_basics, TITLE_PRINCIPALS, by = 'nconst') |>
   left_join(movies_ratings_success, by = 'tconst') |>
-  select(tconst, primaryTitle, startYear, averageRating, numVotes, success) |>
+  select(tconst, primaryTitle, startYear, genres, averageRating, numVotes, success) |>
   drop_na() |>
   unique()
 
 ```
-
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -717,11 +692,9 @@ steven_spielberg_works |>
 
 ```
 
+**Question #4**: Perform at least one other form of ‘spot check’ validation.
 
-
-Question #4: Perform at least one other form of ‘spot check’ validation.
-
-I decided for my last ‘spot check’ validation I would check the success metric of the top 5 most grossing movies of all time from [IMDb’s Top Lifetime Grosses - Box Office Mojo](https://www.boxofficemojo.com/chart/top_lifetime_gross/?area=XWW), to ensure that its box office success is reflected in my success index. These 5 movies are *Avatar*, *Avengers: Endgame*, *Avatar: The Way of Water*, *Titanic*, and *Star Wars: Episode VII - The Force Awakens*. 
+I decided for my last ‘spot check’ validation I would check the success metric of the top 5 most grossing movies of all time from [IMDb’s Top Lifetime Grosses - Box Office Mojo](https://www.boxofficemojo.com/chart/top_lifetime_gross/?area=XWW), to ensure that their box office success is reflected in my success index. These 5 movies are *Avatar*, *Avengers: Endgame*, *Avatar: The Way of Water*, *Titanic*, and *Star Wars: Episode VII - The Force Awakens*. Each of these movies score relatively high on my success index, with success indices greater than 0.3.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -746,13 +719,26 @@ star_wars_success <- movies_ratings_success |>
   filter(primaryTitle == "Star Wars: Episode VII - The Force Awakens") |>
   pull(success)
 
+cat("Avatar: ", avatar_success)
+cat("\nAvengers: Endgame: ", avengers_success)
+cat("\nAvatar: The Way of Water: ", avatar_water_success)
+cat("\nTitanic: ", titanic_success)
+cat("\nStar Wars: Episode VII - The Force Awakens: ", star_wars_success)
+
 ```
 
-Question #5: Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value v such that movies above v are all “solid” or better.
+**Question #5**: Come up with a numerical threshold for a project to be a ‘success’; that is, determine a value v such that movies above v are all “solid” or better.
 
 To drive our analysis on successful movies, we will need to determine a numerical threshold for our success metric that will ensure these films are "solid" or better.
 
-Before assessing possible thresholds for the success metric, let’s take a look at the distribution of success for the movie data. About 75% of movies score really low on the success scale with indices less than `{r} quantile(movies_ratings_success$success, 0.75)`. 
+Before assessing possible thresholds for the success metric, let’s take a look at the distribution of success for the movie data. About 75% of movies score really low on the success scale with indices less than `{r} quantile(movies_ratings_success$success, 0.75)`.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+quantile(movies_ratings_success$success)
+
+```
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -769,14 +755,7 @@ movies_ratings_success |>
 
 ```
 
-```{r, message = FALSE, warning = FALSE}
-#| code-fold: true
-
-quantile(movies_ratings_success$success)
-
-```
-
-To be an incredibly successful movie, I believe that they have to score better than a large majority of movies, but still have a generally high average rating (at least above 0.5). Initially I chose a success measure of v = 0.1. Upon further observations, I noticed that a threshold of 0.1 still kept movies with average ratings as low as 3.8. 
+To be an incredibly successful movie, I believe that they have to score better than a large majority of movies, but still have a generally high average rating (at least above 0.5). Initially I chose a success measure of v = 0.1. Upon further observations, I noticed that a threshold of 0.1 still kept movies with average ratings as low as 3.8.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -789,44 +768,69 @@ movies_ratings_success |>
                 options = list(pageLength = 5))
 
 ```
-Then after further adjustment and considering various numeric thresholds for my success metric, I decided on a success threshold of v = 0.2.
 
-### Task #4
+```{r echo = FALSE}
 
-```{r}
+min_rating <- movies_ratings_success |>
+  filter(success >= 0.2) |>
+  slice_min(averageRating, n = 1) |>
+  pull(averageRating)
+
+min_Votes <- movies_ratings_success |>
+  filter(success >= 0.2) |>
+  slice_min(numVotes, n = 1) |>
+  pull(numVotes)
+
+```
+
+Then after further adjustment and considering various numeric thresholds for my success metric, I decided on a success threshold of **v = 0.2**, guaranteeing that the films score above more than 75% of less successful films and still maintaining above or equal to a `{r} min_rating` average rating with a substantial number of votes (over `{r} prettyNum(min_Votes, big.mark = ",")` votes).
+
+Below is the code to create our new data table, `successful_movies`, with our success threshold of v = 0.2.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 # Successful Movies Filter
 
 successful_movies <- movies_ratings_success |>
   filter(success >= 0.2)
 
-
 ```
 
-Split the genres column
+## Examining Success by Genre and Decade
 
-```{r}
+### Exploration Questions
+
+Next, to begin thinking about a movie to pitch, I would like to start with a search for an optimal film genre to pursue.
+
+::: callout-tip
+By answering the following questions, I hope to narrow down an ideal film genre to explore for my movie remake pitch.
+
+1.  What was the genre with the most "successes" in each decade?
+2.  What genre consistently has the most "successes"? What genre used to reliably produced "successes" and has fallen out of favor?
+3.  What genre has produced the most "successes" since 2010? Does it have the highest success *rate* or does it only have a large number of successes because there are many productions in that genre?
+4.  What genre has become more popular in recent years?
+:::
+
+Question #1: What was the genre with the most "successes" in each decade?
+
+First, I wanted to find out which genre had the most successes in each decade, figure out whether one genre dominated or if different genres had peaks during different decades.
+
+Before proceeding with this, I needed to split out the information from the `genres` column so that each cell only contained one genre, I created a new data frame `successful_movies_split_genres` for this information.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 successful_movies_split_genres <- successful_movies |>
   separate_longer_delim(genres, ",") |>
   mutate(decade = (startYear %/% 10) * 10)
 
-
-unique(successful_movies_split_genres$decade)
-
-length(unique(successful_movies_split_genres$primaryTitle))
 ```
 
-```{r}
+Based on the information below, I found that the Drama genre primarily dominated from the 9 decades between the 1920s to the 2000s, it was not until the 2010s when the Action genre took the lead for the 2010s and the 2020s decades. Since the 2020s decade is less than halfway through, there is still time for other genres to overtake its lead, but with our current information, Action currently leads with the most successes produced.
 
-successful_movies_split_genres |>
-  arrange(averageRating)
-
-```
-
-#### Question #1
-
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 successful_movies_split_genres |>
   group_by(decade, genres) |>
@@ -834,58 +838,80 @@ successful_movies_split_genres |>
   mutate(max_total = max(total)) |>
   filter(total == max_total) |>
   ungroup() |>
-  select(decade, genres)
+  select(decade, genres, total) |>
+  DT::datatable(rownames = FALSE,
+                options = list(pageLength = 5))
 
 
 ```
 
-```{r}
+Since there are over 20 movie genres in our data set, it is a little bit difficult to visualize all these data onto one graph, so using the `forcats` package, I was able to keep the top 5 performing genres and bucket the remaining 16 genres into one "Other" bucket. From this bar plot, we can see that the Drama genre has been dominant for the most part, with Action taking the lead more recently. (Note: The "Other" bucket has the highest amount of movies, however, there are 16 genres combined into one bucket.)
 
-successful_movies_split_genres |>
-  ggplot(aes(x = decade, fill = genres)) +
-  geom_bar()
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
-```
-
-```{r}
-
-# forcats stuff
+# Kept the top 5 performing genres, bucketed the remaining genres into an "Other" column (containing 16 genres)
 
 
 successful_movies_split_genres |>
   mutate(new_genres = fct_lump_n(genres, 5)) |>
   ggplot(aes(x = decade, fill = new_genres)) +
-  geom_bar()
+  geom_bar() +
+  labs(title = "Total Successful Movies per Genre by Decade (1920s-2020s)",
+       x = "Decade",
+       y = "Total Successful Movies") +
+  scale_fill_discrete(name = "Genres")
 
-# other category includes 16 other genres
 
 ```
 
-```{r fig.height = 10, fig.width = 12}
+Below is a more comprehensive view of the amount of successful Drama movies per decade. We can see that the Drama genre has significantly increased their output of successful movies from the 1970s onwards.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 successful_movies_split_genres |>
-  ggplot(aes(x = genres)) +
-  geom_bar() +
-  facet_wrap(~decade,
-             ncol = 3) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  filter(genres == "Drama") |>
+  group_by(decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total)) +
+  geom_bar(fill = "deepskyblue", stat = "identity") +
+  geom_line(aes(y = total), linetype = "dashed", color = "red") +
+  labs(title = "Successful Drama Movies Over the Decades (1920s-2020s)",
+       x = "Decade",
+       y = "Total Successful Movies")
+
 
 ```
 
-```{r}
+Question #2: What genre consistently has the most “successes”? What genre used to reliably produced “successes” and has fallen out of favor?
+
+Based on the output and plots from the previous question, I found that the Drama genre consistently had the most successes in each decade. Until the 2010s decade when the Action genre overtook the lead. Despite the change in the most dominant genre, the Drama genre continues to keep a close race with the Action genre for the most amount of successful films.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 successful_movies_split_genres |>
-  mutate(new_genres = fct_lump_n(genres, 5)) |>
-  ggplot(aes(x = new_genres)) +
+  filter(genres == "Drama" | genres == "Action") |>
+  ggplot(aes(x = genres, fill = genres)) +
   geom_bar() +
-  facet_wrap(~decade,
-             ncol = 3) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  facet_wrap(~decade) +
+  labs(title = "Successful Action Movies vs. Drama Movies Over the Decades (1920s-2020s)",
+       x = "Decade",
+       y = "Total Successful Movies") +
+  scale_fill_discrete(name = "Genres") +
+  theme(legend.position = "bottom")
+
 
 
 ```
 
-```{r}
+Question #3: What genre has produced the most “successes” since 2010? Does it have the highest success rate or does it only have a large number of successes because there are many productions in that genre?
+
+Let's focus our attention to more recent decades, I would like to analyze the performance of genres from 2010s to the present. Below is a bar plot to visualize the distribution of successful movies across genres. Like we mentioned earlier, Action and Drama take first and second, respectively, for the most amount of successful films since 2010. However, now we can more clearly see that Adventure is a close third, with over 160 successful films in the past two decades. The remaining genres have all produced less than 150 successful movies in the same timeframe.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 successful_movies_split_genres |>
   filter(decade >= 2010) |>
@@ -898,104 +924,12 @@ successful_movies_split_genres |>
 
 ```
 
-```{r}
+While Action, Drama, and Adventure have all produced over 150 successful movies each, it begs the question of whether these are highly successful genres or if this success is also partially impacted by the quantity of movies produced.
 
-successful_movies_split_genres |>
-  ggplot(aes(x=success)) + 
-  geom_histogram(bins=30) +
-  facet_wrap(~genres) +
-  xlab("Success") + 
-  ylab("Number of Titles") + 
-  ggtitle("Distribution of Success for Each Genre") + 
-  theme_bw() + 
-  scale_x_log10(label=scales::comma) + 
-  scale_y_continuous(label=scales::comma)
+First, I needed to create a new data frame, `percentage_successful` containing the percentage of successful films per genre calculated by taking the total successful films out of the total films produced.
 
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  mutate(new_genres = fct_lump_n(genres, 5)) |>
-  ggplot(aes(x=success)) + 
-  geom_histogram(bins=30) +
-  facet_wrap(~new_genres) +
-  xlab("Success") + 
-  ylab("Number of Titles") + 
-  ggtitle("Distribution of Success for Each Genre") + 
-  theme_bw() + 
-  scale_x_log10(label=scales::comma) + 
-  scale_y_continuous(label=scales::comma)
-
-
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  group_by(genres, decade) |>
-  summarize(total = n()) |>
-  ggplot(aes(x = decade, y = total, group = genres)) + 
-  geom_line(aes(color = genres)) +
-  geom_point(aes(color = genres)) +
-  xlab("Decade") + 
-  ylab("Number of Successes") + 
-  ggtitle("Number of Successful Movies per Decade by Genre") + 
-  scale_x_log10(label=scales::comma) + 
-  scale_y_continuous(label=scales::comma) +
-  scale_color_manual(values = unname(alphabet()))
-
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  mutate(new_genres = fct_lump_n(genres, 5)) |>
-  group_by(new_genres, decade) |>
-  summarize(total = n()) |>
-  ggplot(aes(x = decade, y = total, group = new_genres)) + 
-  geom_line(aes(color = new_genres)) +
-  geom_point(aes(color = new_genres)) +
-  xlab("Decade") + 
-  ylab("Number of Successes") + 
-  ggtitle("Number of Successful Movies per Decade by Genre") + 
-  scale_y_continuous(label=scales::comma)
-
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  filter(genres == "Sci-Fi") |>
-  group_by(decade) |>
-  summarize(total = n()) |>
-  ggplot(aes(x = decade, y = total)) +
-  geom_line() +
-  geom_point() +
-  labs(title = "Successful Sci-Fi Movies by Decade",
-       x = "Decade",
-       y = "Total")
-
-
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  filter(genres == "Sci-Fi") |>
-  group_by(decade) |>
-  summarize(total = n()) |>
-  ggplot(aes(x = decade, y = total)) + 
-  geom_line() +
-  geom_point() +
-  xlab("Decade") + 
-  ylab("Number of Successes") + 
-  ggtitle("Number of Successful Movies per Decade by Genre") + 
-  scale_y_continuous(label=scales::comma)
-
-```
-
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 total_movies_genre <- movies_ratings_success |>
   separate_longer_delim(genres, ",") |>
@@ -1007,189 +941,264 @@ total_successful_movies_genre <- successful_movies_split_genres |>
   summarize(total = n())
 
 percentage_successful <- inner_join(total_movies_genre, total_successful_movies_genre, by = 'genres') |>
-  mutate(percentage = (total.y/total.x) * 100) |>
+  mutate(percentage = (total.y / total.x) * 100,
+         highest = (percentage == max(percentage))) |>
   arrange(desc(percentage))
 
 ```
 
-```{r}
+```{r echo = FALSE}
+
+highest_percent <- percentage_successful |>
+  slice_max(percentage, n = 1) |>
+  pull(percentage)
+
+second_highest_percent <- percentage_successful |>
+  slice_max(percentage, n = 2) |>
+  slice_min(percentage, n = 1) |>
+  pull(percentage)
+
+
+```
+
+After taking a closer look, I found that actually the Sci-Fi genre produced the highest percentage of successes with `{r} round(highest_percent, 2)`% of successful movies, followed by Adventure with insert percentage here `{r} round(second_highest_percent, 2)`%. While the genres Action and Drama had the **most** successes, this could have been due to the considerable amount of movies produced in those genres. Sometimes, it is less about the quantity produced and more about the quality being produced. Despite the Sci-Fi genre not producing nearly the same amount of films as the Action and Drama genres, the percentage of successful films to come out of this genre is higher than the others, which is why we need to consider the Sci-Fi genre as a successful genre as well.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 percentage_successful |>
-  ggplot(aes(x = genres, y = percentage)) +
+  ggplot(aes(x = genres, y = percentage, fill = highest)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  ggtitle("Percentage of Successful Films by Genre")
+  labs(title = "Percentage of Successful Films by Genre Since 2010",
+       x = "Genres",
+       y = "Percentage of Successful Films") +
+  scale_fill_manual(values = c("TRUE" = "blue", "FALSE" = "darkgrey")) +
+  theme(legend.position = "none")
 
 ```
 
-```{r}
+Question #4: What genre has become more popular in recent years?
 
-scifi_success <- successful_movies_split_genres |>
+In the below line plot, I limited our focus to 11 genres with 1 additional "Other" bucket to contain the remaining genres. All of these genres experience a jump in the amount of successful films produced between the 1990s and the 2000s, likely due to the increase in advanced movie production. Based on this data, we see that again, Drama takes a commanding lead for number of successful films up until 2010 when the Action genre overtakes the top spot. The Adventure genre is also not too far behind these two dominant genres. We are less than halfway through the 2020s decade, so the race is still close, but following the current pattern, it looks as though Action will continue to lead the genres in total number of successful movies.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# limited to 11 genres with one "Other" bucket of genres, utilizing color brewer's suggestion of 12 maximum data classes
+
+successful_movies_split_genres |>
+  mutate(new_genres = fct_lump_n(genres, 11)) |>
+  group_by(new_genres, decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total, group = new_genres)) + 
+  geom_line(aes(color = new_genres)) +
+  geom_point(aes(color = new_genres)) +
+  labs(title = "Number of Successful Movies per Decade by Genre",
+       x = "Decade",
+       y = "Number of Successes") +
+  scale_fill_discrete(name = "Genres") +
+  scale_y_continuous(label=scales::comma) +
+  scale_color_manual(values = c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'))
+
+```
+
+Based on our earlier analysis, I found that the Action and Drama genres have been the most popular genres in recent years, producing the most successes out of any categories. I also found that the Sci-Fi and Adventure genres produced a high percentage of successful movies since 2010. So, it may be advantageous to pursue one of these categories in my movie pitch. Taking a closer look at each of these genres, we can see that for the Action, Adventure and Drama genres, the distribution of success is skewed right. While for the Sci-Fi genre, the success distribution is a little more uniform, possibly suggesting that there would be less predictability in the success of a Sci-Fi movie as compared to the other genres which cut close with the success threshold.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+successful_movies_split_genres |>
+  filter(genres %in% c("Action", "Drama", "Sci-Fi", "Adventure")) |>
+  ggplot(aes(x = success)) + 
+  geom_histogram(bins=30) +
+  facet_wrap(~genres) +
+  labs(title = "Distribution of Success for Each Genre",
+       x = "Success",
+       y = "Number of Titles") +
+  scale_x_log10(label=scales::comma) +
+  scale_y_continuous(label=scales::comma)
+
+```
+
+From the box plots below, each of the quartiles for the Sci-Fi genre edge ahead of the other genres. Despite the Sci-Fi genres low production of films, the genre can still compete by producing a high percentage of successful films.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+successful_movies_split_genres |>
+  filter(genres %in% c("Action", "Drama", "Sci-Fi", "Adventure")) |>
+  ggplot(aes(x = genres, y = success)) + 
+  geom_boxplot() +
+  xlab("Genres") + 
+  ylab("Success") + 
+  ggtitle("Distribution of Success for Each Genre") + 
+  scale_y_continuous(label=scales::comma)
+
+
+```
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+successful_movies_split_genres |>
   filter(genres == "Sci-Fi") |>
-  arrange(desc(success))
+  group_by(decade) |>
+  summarize(total = n()) |>
+  ggplot(aes(x = decade, y = total)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Successful Sci-Fi Movies by Decade",
+       x = "Decade",
+       y = "Number of Titles") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-head(scifi_success)
-
-```
-
-### Task #5
-
-```{r}
-
-names_movies_ratings_join <- left_join(NAME_BASICS_split, movies_ratings_success, join_by("knownForTitles" == "tconst")) |>
-  drop_na(success)
 
 ```
 
-```{r}
+### Genre Selection
 
-# counts the remaining total "knownForTitles" per person (after drop NA)
+The Drama genre’s dominance in the film industry was evident from the earliest days into the 21st century, with a consistently high output of successful movies. Drama movies succeeded in the 20th century, a period of significant social change and historical events, by evoking emotions and connecting with its audience’s experience. Over time, as the world experienced a technology boom, the movie industry also reflected this by observing a shift in genre success. Starting in the 2010s decade, the Action genre overtook Drama as the most dominant genre, producing more successful movies. The introduction of new technology like computer-generated imagery (CGI) and advanced stunt technology allowed for bolder and more fantastical movie production, propelling newer genres like Action to overtake traditional movies. However, despite the high output of successful Action films in more recent decades, its proportion of successful movies in relation to its total output lags behind genres like Sci-Fi and Adventure which each produce more successful movies per movie created in their respective genres. Since the Sci-Fi genre has a high success rate and somewhat of a low production (as compared to other genres), I would like to pursue a movie in the **Sci-Fi** genre.
 
-person_movie_count <- names_movies_ratings_join |>
+## Successful Personnel in the Genre
+
+### Successful Director
+
+For my Sci-Fi movie, I would like to pick Steven Spielberg as my director. Spielberg is an experienced director, having directed many highly successful Sci-Fi movies in the past, one of them being the iconic and classic *E.T. the Extra-Terrestrial*. 
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# data tables containing everyone's name basics and titles worked on 
+
+everyone_projects <- left_join(NAME_BASICS, TITLE_PRINCIPALS, by = 'nconst') |>
+  left_join(movies_ratings_success, by = 'tconst') |>
+  filter(!is.na(averageRating)) |>
   group_by(nconst) |>
-  summarize(average_person_success = sum(success) / n(),
-            total_movies = n())
-
-
-```
-
-```{r}
-
-# people with an average success of 0.2 or higher on their movies
-
-names_success_movies <- left_join(names_movies_ratings_join, person_movie_count, by = "nconst") |>
-  arrange(desc(average_person_success)) |>
-  filter(average_person_success >= 0.2)
+  mutate(average_person_success = round(sum(success) / n(), 3),
+         total_movies = n())
   
+everyones_work <- everyone_projects |>
+  select(nconst, primaryName, average_person_success, total_movies, tconst, category, primaryTitle, averageRating, numVotes, success, genres)
 
 ```
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
-# split the primaryProfessions and genres columns
-# need to filter for only first profession being actor/actress/director
+# checking Steven Spielberg's success relative to all Sci-Fi directors
 
-names_success_movies_split <- names_success_movies |>
-  separate_longer_delim(primaryProfession, ",") |>
-  separate_longer_delim(genres, ",")
+scifi_directors_genre_split <- everyones_work |>
+  separate_longer_delim(genres, delim = ",") |>
+  filter(genres == "Sci-Fi", category == "director") |>
+  arrange(desc(average_person_success))
 
-
-```
-
-```{r}
-
-# not sure if i want this anymore
-
-# split the primaryProfessions and genres columns
-# filtering for first profession ONLY for each person
-
-# names_success_movies_split <- names_success_movies |>
-#   separate_longer_delim(primaryProfession, ",") |>
-#   group_by(nconst) |>
-#   mutate(profession = first(primaryProfession)) |>
-#   filter(primaryProfession == profession) |>
-#   select(-profession) |>
-#   separate_longer_delim(genres, ",")
-
-
-```
-
-```{r}
-
-# filter for sci-fi genre and only actors, actresses and directors
-
-
-scifi_names_success <- names_success_movies_split |>
-  filter(genres == "Sci-Fi") |>
-  filter(primaryProfession == "actor" | primaryProfession == "actress" | primaryProfession == "director") |>
-  arrange(desc(total_movies), desc(average_person_success))
-
-
-```
-
-```{r}
-
-# experimenting here...
-
-act_scifi_names_success <- scifi_names_success |>
-  filter(primaryProfession == "actor" | primaryProfession == "actress")
-
-direct_scifi_names_success <- scifi_names_success |>
-  filter(primaryProfession == "director")
-
-act_direct_pairs_sci_fi <- inner_join(act_scifi_names_success, 
-                               direct_scifi_names_success, 
-                               by = c('knownForTitles', 'averageRating', 'numVotes', 'titleType', 'primaryTitle', 'originalTitle', 'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres')) |>
-  mutate(combined_success = average_person_success.x * average_person_success.y) |>
-  arrange(desc(combined_success))
-
-```
-
-```{r}
-
-steven_spielberg <- direct_scifi_names_success |>
-  filter(primaryName == "Steven Spielberg")
-
-steven_spielberg_rank <- direct_scifi_names_success |>
-  mutate(rank = rank(-average_person_success), percent = rank / max(rank)) |>
-  filter(primaryName == "Steven Spielberg")
-  
-steven_spielberg$average_person_success
-
-```
-
-```{r fig.width = 10, fig.height = 4}
-
-movies_ratings_success |>
-  filter(primaryTitle %in% c("Close Encounters of the Third Kind", 
-                           "E.T. the Extra-Terrestrial", 
-                           "Jurassic Park",
-                           "Ready Player One")) |>
-  ggplot(aes(x = primaryTitle, y = success)) +
-  geom_bar(stat = 'identity', width = 0.5) +
-  geom_hline(yintercept = 0.2, linetype = "dashed", color = "black", linewidth = 1) +
-  labs(title = "Steven Spielberg's Sci-Fi Movies",
-       x = "Movie Title",
-       y = "Success Index")
-
-```
-
-```{r}
-
-steven_spielberg_movies_split <- names_success_movies |>
+spielberg_success <- scifi_directors_genre_split |>
   filter(primaryName == "Steven Spielberg") |>
-  separate_longer_delim(genres, ',')
-  
+  slice_head(n = 1) |>
+  pull(average_person_success)
 
-steven_spielberg_star_actors <- left_join(names_success_movies_split,
-                                     steven_spielberg_movies_split,
-                                     by = c('knownForTitles', 'averageRating', 'numVotes', 'titleType', 'primaryTitle', 'originalTitle', 'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres')) |>
-  drop_na(nconst.y) |>
-  filter(is.na(deathYear.x)) |>
-  mutate(combined_success = average_person_success.x * average_person_success.y,
-         age_act = 2024 - birthYear.x) |>
-  filter(primaryProfession.x == "actor" | primaryProfession.x == "actress") |>
-  filter(primaryName.x %in% c("Liam Neeson", "Ralph Fiennes", "Ben Kingsley",
-                              "Henry Thomas", "Drew Barrymore", "Peter Coyote",
-                              "Tom Hanks", "Matt Damon", "Tom Sizemore",
-                              "Harrison Ford", "Karen Allen", "Paul Freeman"))
+steven_rank <- scifi_directors_genre_split |>
+  select(primaryName, average_person_success) |>
+  mutate(above_steven = (average_person_success >= spielberg_success)) |>
+  group_by(above_steven) |>
+  summarize(total = n()) |>
+  mutate(percent = total/sum(total)) |>
+  filter(above_steven == TRUE) |>
+  pull(percent)
+
+cat("Steven Spielberg Top ", round(steven_rank*100, 2), "% of Sci-Fi Directors")
+
+```
+In the histogram below, Steven Spielberg actually ranks in the top `{r} round(steven_rank*100, 2)`% of Sci-Fi directors, solidifying his position as a highly successful director among the most top tier Sci-Fi directors.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+scifi_directors_genre_split |>
+  ggplot(aes(x = success)) +
+  geom_histogram(bins = 30) +
+  geom_vline(xintercept = spielberg_success, 
+             color = "deepskyblue", 
+             linetype = "dashed", 
+             linewidth = 1) +
+  labs(title = "Distribution of Success Indices for Sci-Fi Directors",
+       x = "Director's Average Success",
+       y = "Number of Directors")
 
 
 ```
 
-```{r fig.width = 15, fig.height = 6}
+Taking a closer look at the Sci-Fi films that Spielberg has produced, we can see that a large majority of the Sci-Fi films Spielberg has been a part of have been successes.
 
-indiana_jones_movies <- movies_ratings_success |>
+```{r, message = FALSE, warning = FALSE, fig.width = 18, fig.height = 6}
+#| code-fold: true
+
+scifi_directors_genre_split |>
+  filter(primaryName == "Steven Spielberg") |>
+  ggplot(aes(x = primaryTitle, y = success)) +
+  geom_bar(stat = "identity", fill = "#B2B0EA")  +
+  geom_hline(yintercept = 0.2,
+             color = "red",
+             linetype = "dashed",
+             linewidth = 1) +
+  labs(title = "Steven Spielberg Sci-Fi Movies",
+       x = "Movie Title",
+       y = "Success")
+
+```
+From the pie chart below, we can see that of the Sci-Fi movies Steven Spielberg has produced, 80% of them have been successes, indicating him as a great candidate to direct future Sci-Fi films.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# splitting the genre column so that each cell under the genre column contains only one value
+
+steven_spielberg_works_split_genres <- steven_spielberg_works |>
+  separate_longer_delim(genres, delim = ",")
+
+# filtering for only Sci-Fi movies
+
+steven_spielberg_scifi <- steven_spielberg_works_split_genres |>
+  filter(genres == "Sci-Fi") |>
+  mutate(outcome = (success >= 0.2))
+
+# pie chart showing percentage of successes vs non-successes
+
+steven_spielberg_scifi |>
+  group_by(outcome) |>
+  summarize(total = n()) |>
+  mutate(total_movies = sum(total),
+         percentage = (total/total_movies)*100,
+         percent_labels = paste(percentage, "%")) |>
+  ggplot(aes(x="", y = total, fill = outcome)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = percent_labels),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  labs(title = "Steven Spielberg's Proportion of Successful Sci-Fi Films") +
+  scale_fill_discrete(name = "Movie Outcome", 
+                      labels = c("Unsuccessful", "Successful"),
+                      guide = guide_legend(reverse = TRUE))
+
+```
+### Acting Talent
+
+Next, I would like to pick an actor/actress that has worked with Spielberg on successful films in the past. Given Harrison Ford's proven success with Steven Spielberg in the iconic Indiana Jones franchise, he would be a strong candidate for another lead role. Ford starred in all five films of the Indiana Jones franchise, the first four of which were directed by Spielberg and the last by James Mangold. Ford's collaborations with Spielberg on the Indiana Jones franchise have consistently proven to be box office successes, which contrasts the performance of franchise’s fifth installment, directed by James Mangold. As shown in the plot below, the first four films exceeded the success threshold, while the last one fell short. Ford's established work with Spielberg and their history of creating box office hits makes them a compelling choice.
+
+```{r, message = FALSE, warning = FALSE, fig.width = 15, fig.height = 6}
+#| code-fold: true
+
+# filter only for the Indiana Jones franchise
+
+indiana_jones_movies <- everyones_work |>
   filter(primaryTitle %in% c("Raiders of the Lost Ark",
                              "Indiana Jones and the Temple of Doom",
                              "Indiana Jones and the Last Crusade",
                              "Indiana Jones and the Kingdom of the Crystal Skull",
                              "Indiana Jones and the Dial of Destiny")) |>
-  mutate(director = c("Steven Spielberg", 
-                      "Steven Spielberg", 
-                      "Steven Spielberg", 
-                      "Steven Spielberg", 
-                      "James Mangold"))
+  filter(category == "director")
 
 movie_order <- c("Raiders of the Lost Ark",
                  "Indiana Jones and the Temple of Doom",
@@ -1197,8 +1206,10 @@ movie_order <- c("Raiders of the Lost Ark",
                  "Indiana Jones and the Kingdom of the Crystal Skull",
                  "Indiana Jones and the Dial of Destiny")
 
+# barplot indicating success of each Indiana Jones film, color classified by director
+
 indiana_jones_movies |>
-  ggplot(aes(x = primaryTitle, y = success, fill = director)) +
+  ggplot(aes(x = primaryTitle, y = success, fill = primaryName)) +
   geom_bar(stat = "identity", width = 0.5) +
   geom_hline(yintercept = 0.2, linetype = "dashed", color = "black", linewidth = 1) +
   labs(title = "Indiana Jones Movies",
@@ -1206,76 +1217,112 @@ indiana_jones_movies |>
        y = "Success Index",
        fill = "Directors") +
   theme(legend.position = "bottom") +
-  scale_x_discrete(limits = movie_order)
+  scale_x_discrete(limits = movie_order) +
+  scale_fill_discrete(guide = guide_legend(reverse = TRUE))
 
 
 ```
 
-```{r}
+Lastly, I would like to pick a younger and experienced actor to work alongside the talented Harrison Ford and Steven Spielberg. Below is the table breakdown of actors and actresses between the ages of 20 and 30, sorted by their respective average success metrics.
 
-scifi_young_actors <- names_success_movies |>
-  separate_longer_delim(primaryProfession, ",") |>
-  group_by(nconst) |>
-  mutate(profession = first(primaryProfession)) |>
-  filter(primaryProfession == profession) |>
-  select(-profession) |>
-  separate_longer_delim(genres, ",") |>
-  filter(genres == "Sci-Fi") |>
-  filter(primaryProfession == "actor" | primaryProfession == "actress") |>
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# filtering for actors/actresses that have worked on Sci-Fi films under the age of 30
+
+scifi_young_actors_genre_split <- everyone_projects |>
+  separate_longer_delim(genres, delim = ",") |>
   filter(is.na(deathYear)) |>
   mutate(age = 2024 - birthYear) |>
-  filter(age < 30) |>
+  filter(genres == "Sci-Fi", 
+         category %in% c("actor", "actress"),
+         age %in% (20:30)) |>
   arrange(desc(average_person_success))
 
+scifi_young_actors_genre_split |>
+  select(primaryName, age, category, average_person_success) |>
+  unique() |>
+  arrange(desc(average_person_success)) |>
+  DT::datatable(rownames = FALSE, 
+                options = list(pageLength = 10))
 
 ```
+```{r echo = FALSE}
 
-```{r}
-
-tom_holland_known_for <- names_success_movies |>
+tom_holland_success <- scifi_young_actors_genre_split |>
   filter(primaryName == "Tom Holland") |>
-  select(primaryTitle, genres, success)
-
-holland_ford_spielberg <- names_success_movies |>
-  filter(primaryName == "Tom Holland" | primaryName == "Harrison Ford" | primaryName == "Steven Spielberg") |>
-  select(primaryName, average_person_success) |>
-  unique()
-
+  slice_head(n = 1) |>
+  pull(average_person_success)
 
 ```
 
-```{r}
+Taking a look at some of the top actors/actresses below the age of 30, I found that Tom Holland ranks relatively high up with a success index of `{r} round(tom_holland_success, 3)`. Additionally, both of the Sci-Fi films he's starred in of have scored very high on the success index, demonstrating his existing experience in this genre. 
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+tom_holland_projects <- scifi_young_actors_genre_split |>
+  filter(primaryName == "Tom Holland")
+
+tom_holland_projects |>
+  ggplot(aes(x = primaryTitle, y = success)) +
+  geom_bar(stat = "identity", width = 0.5, fill = "#A2D9D9") +
+  labs(title = "Tom Holland's Sci-Fi Films",
+       x = "Movie Title",
+       y = "Success Index")
+
+
+```
+I knew I wanted to pick a young talent with experience as a lead in major films. Tom Holland with his impressive résumé, including his starring role as Spider-Man in the Marvel Cinematic Universe presents him an ideal candidate. Even with the blockbuster movies he’s already been a part of, Holland can benefit from continuing to work with experienced Hollywood talent, like Harrison Ford.
+
+## Nostalgia and Remakes
+
+After selecting our genre, director, and star actors for our film, we need to finalize a classic movie to remake for our pitch. Below are some of the top Sci-Fi classics released before the year 2000.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
 scifi_successful_movies <- successful_movies_split_genres |>
   filter(genres == "Sci-Fi",
          startYear <= 2000) |>
   arrange(desc(success))
 
+scifi_successful_movies |>
+  DT::datatable(rownames = FALSE,
+                options = list(pageLength = 5))
+
 ```
 
-```{r}
+```{r echo = FALSE}
 
-back_to_the_future <- movies_ratings_success |>
-  filter(primaryTitle == "Back to the Future") |>
-  select(primaryTitle, startYear, genres, averageRating, numVotes, success)
+back_to_the_future_basics <- scifi_successful_movies |>
+  filter(primaryTitle == "Back to the Future")
+
+```
+
+
+After taking a look at some of the most successful movies released before 2000 (without recent sequels or remakes in the past 25 years), I decided to choose [Back to the Future](https://www.imdb.com/title/tt0088763/) from 1985 as my classic movie remake. Back to the Future is an Adventure, Comedy, and Sci-Fi film with a high success index of `{r} round(back_to_the_future_basics$success, 2)`, high IMDb rating of `{r} back_to_the_future_basics$averageRating` and high number of votes at `{r} prettyNum(back_to_the_future_basics$numVotes, big.mark = ",")` votes. There were three Back to the Future movies in the franchise, the first film had the most success with the highest average rating and number of votes. The last film of the franchise was released in 1990 and there have been no remakes or additional sequels since. In my Back to the Future remake, I plan to cast Harrison Ford as the scientist, Doc Brown, and Tom Holland as Marty McFly.
+
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# data frame containing all of the Back to the Future franchise movies
 
 back_to_the_future_franchise <- movies_ratings_success |>
   filter(str_detect(primaryTitle, "Back to the Future")) |>
   select(primaryTitle, startYear, genres, averageRating, numVotes, success)
 
-```
-
-```{r}
-
-names_success_movies_split |>
-  filter(primaryName == "Lea Thompson")
-
+back_to_the_future_franchise |>
+  select(primaryTitle, startYear, averageRating, numVotes, success) |>
+  DT::datatable(rownames = FALSE)
 
 ```
+Since the first film was released 39 years ago in 1985, we will need to check to confirm whether key actors, directors, or writers from the original are still alive. From the Back to the Future IMDb page, I found that the primary contributors to the film were Robert Zemeckis (director and writer), Bob Gale (writer), Michael J. Fox (actor), Christopher Lloyd (actor), and Lea Thompson (actor). Since all five of the primary contributors to the original film are still alive, I will need to contact the legal department to confirm that we can secure the rights to the project before I can proceed. As a fan service, I plan to also provide cameos to the stars of the original film if they are interested in partaking in the movie reboot.
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
+#| code-fold: true
 
-original_contributors_bttf <- names_movies_ratings_join |>
+original_contributors_bttf <- everyone_projects |>
   filter(primaryTitle == "Back to the Future") |>
   filter(primaryName %in% c("Robert Zemeckis", 
                             "Bob Gale", 
@@ -1286,22 +1333,26 @@ original_contributors_bttf <- names_movies_ratings_join |>
   unique() |>
   mutate(age = 2024 - birthYear)
 
-```
-
-```{r}
-
-successful_movies_split_genres |>
-  filter(genres == "Sci-Fi") |>
-  group_by(decade) |>
-  summarize(total = n())
+original_contributors_bttf |>
+  DT::datatable(rownames = FALSE)
 
 ```
 
-[^1]: More information on the history of Hollywood can be found at: https://www.britannica.com/place/Hollywood-California
-[^2]: Screen Rant opinion article about Breaking Bad 'Ozymandias' episode, written by Dan Peeke: https://screenrant.com/breaking-bad-reasons-ozymandias-was-best-episode-the-fly-was-worst/
-[^3]: More on The Shawshank Redemption’s rocky road to becoming a classic film: https://www.bbc.com/culture/article/20240919-the-shawshank-redemptions-path-from-flop-to-classic
-[^4]: Fight Club’s trek to becoming a classic film: https://screenrant.com/how-much-fight-club-made-box-office-adjusted-inflation/#:~:text=Summary,advertising%20and%20box%20office%20success.
+## Final Movie Pitch
+
+### Movie Pitch
+
+The Sci-Fi genre allows audiences to extend imaginations beyond the possibilities of the present, a genre we should consider. Over the past two decades, Sci-Fi has produced the highest percentage of successful films (`{r} round(highest_percent, 2)`%). Furthermore, the Sci-Fi genre has increased the amount of successful movies produced from the 1980s-2010s by about 540%. Sci-Fi, unlike more saturated markets, offers a less crowded landscape, providing opportunities for emerging films.
+
+Steven Spielberg ranks in the top `{r} round(steven_rank*100, 2)`% of all-time Sci-Fi directors. Additionally, 80% of the Sci-Fi movies he's directed have been box office successes. Spielberg’s successful track record in the Sci-Fi genre with movies like *E.T. the Extra-Terrestrial*, justifies him as a top-tier choice to direct another successful Sci-Fi movie.
+
+Harrison Ford's and Steven Spielberg’s collaboration on the Indiana Jones franchise resulted in an 100% success rate with four movie hits. Given their history of success together, their collaboration will likely lead to another hit. Tom Holland, a young and experienced actor, has proven his ability to lead blockbuster films and ranks in the top 1% of successful Sci-Fi actors/actresses between ages 20-30. Ford's and Holland's experiences and household names will only boost the movie's reach and potential.
+
+*Back to the Future* is an iconic box office hit from the mid-80s, which is due for a modern day remake. Recreating this classic Sci-Fi film, with the expertise of Steven Spielberg alongside star powers Harrison Ford and Tom Holland will surely produce a box office hit.
 
 
+### Trailer
+
+From director Steven Spielberg, the visionary mind behind E.T. the Extra-Terrestrial; and from actor Harrison Ford, Hollywood icon and star of Indiana Jones; and from actor Tom Holland, popular upcoming star of the Sci-Fi genre, comes the timeless tale, Back to the Future. A story of adventure, time travel, and imagination. Coming soon to a theater near you!
 
 
