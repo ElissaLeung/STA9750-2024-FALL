@@ -278,6 +278,7 @@ There are a few columns in some of the data tables that combine several pieces o
 Before starting any deep-dive analysis, it is important to do some preliminary exploration of our data tables to understand what information we are working with.
 
 ::: callout-tip
+## Preliminary Questions
 Below are some preliminary questions, we would like to answer as an initial exploration of our data tables.
 
 1.  How many movies are in our data set? How many TV series? How many TV episodes?
@@ -566,6 +567,7 @@ TITLE_RATINGS <- TITLE_RATINGS |>
 Before proceeding with further analysis, it is important to validate the success metric and ensure that it aligns appropriately with the movies in the data set. So, I will be answering the following questions to provide some validation on my proposed metric.
 
 ::: callout-tip
+## Validation Questions
 Below are some questions I will be answering to provide some validation on the proposed success metric.
 
 1.  Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
@@ -804,6 +806,7 @@ successful_movies <- movies_ratings_success |>
 Next, to begin thinking about a movie to pitch, I would like to start with a search for an optimal film genre to pursue.
 
 ::: callout-tip
+## Film Genre Questions
 By answering the following questions, I hope to narrow down an ideal film genre to explore for my movie remake pitch.
 
 1.  What was the genre with the most "successes" in each decade?
@@ -812,7 +815,7 @@ By answering the following questions, I hope to narrow down an ideal film genre 
 4.  What genre has become more popular in recent years?
 :::
 
-Question #1: What was the genre with the most "successes" in each decade?
+**Question #1**: What was the genre with the most "successes" in each decade?
 
 First, I wanted to find out which genre had the most successes in each decade, figure out whether one genre dominated or if different genres had peaks during different decades.
 
@@ -884,7 +887,7 @@ successful_movies_split_genres |>
 
 ```
 
-Question #2: What genre consistently has the most “successes”? What genre used to reliably produced “successes” and has fallen out of favor?
+**Question #2**: What genre consistently has the most “successes”? What genre used to reliably produced “successes” and has fallen out of favor?
 
 Based on the output and plots from the previous question, I found that the Drama genre consistently had the most successes in each decade. Until the 2010s decade when the Action genre overtook the lead. Despite the change in the most dominant genre, the Drama genre continues to keep a close race with the Action genre for the most amount of successful films.
 
@@ -906,7 +909,7 @@ successful_movies_split_genres |>
 
 ```
 
-Question #3: What genre has produced the most “successes” since 2010? Does it have the highest success rate or does it only have a large number of successes because there are many productions in that genre?
+**Question #3**: What genre has produced the most “successes” since 2010? Does it have the highest success rate or does it only have a large number of successes because there are many productions in that genre?
 
 Let's focus our attention to more recent decades, I would like to analyze the performance of genres from 2010s to the present. Below is a bar plot to visualize the distribution of successful movies across genres. Like we mentioned earlier, Action and Drama take first and second, respectively, for the most amount of successful films since 2010. However, now we can more clearly see that Adventure is a close third, with over 160 successful films in the past two decades. The remaining genres have all produced less than 150 successful movies in the same timeframe.
 
@@ -978,7 +981,7 @@ percentage_successful |>
 
 ```
 
-Question #4: What genre has become more popular in recent years?
+**Question #4**: What genre has become more popular in recent years?
 
 In the below line plot, I limited our focus to 11 genres with 1 additional "Other" bucket to contain the remaining genres. All of these genres experience a jump in the amount of successful films produced between the 1990s and the 2000s, likely due to the increase in advanced movie production. Based on this data, we see that again, Drama takes a commanding lead for number of successful films up until 2010 when the Action genre overtakes the top spot. The Adventure genre is also not too far behind these two dominant genres. We are less than halfway through the 2020s decade, so the race is still close, but following the current pattern, it looks as though Action will continue to lead the genres in total number of successful movies.
 
