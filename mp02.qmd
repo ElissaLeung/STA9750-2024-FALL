@@ -635,7 +635,7 @@ quantile(movies_ratings_success$success)
 
 For this question, I decided to filter my data table to include only movies that exceeded the 3rd quartile number of votes `{r} prettyNum(quantile(movies_ratings_success$numVotes, 0.75), big.mark = ",")` votes with a success rate lower than the 1st quartile success indices `{r} quantile(movies_ratings_success$success, 0.25)`.
 
-The lowest three were: Santa and the Ice Cream Bunny, Ax 'Em, and 2025 - The World Enslaved by a Virus. All three of these movies scored low on the success and had low average ratings from IMDb. [Rotten Tomatoes](https://www.rottentomatoes.com/) provided some additional insight on these three movies. *Santa and the Ice Cream Bunny* scored a 12% on the popcornmeter (audience vote metric) out of a scale of 100, *Ax 'Em* scored a 36% on the popcornmeter, *2025 - The World Enslaved by a Virus* scored a 0% on the popcornmeter from Rotten Tomatoes. All of these movies scored generally low on this audience vote metric and thus confirms that these movies were of low quality.
+The lowest three were: *Santa and the Ice Cream Bunny*, *Ax 'Em*, and *2025 - The World Enslaved by a Virus*. All three of these movies scored low on the success and had low average ratings from IMDb. [Rotten Tomatoes](https://www.rottentomatoes.com/) provided some additional insight on these three movies. *Santa and the Ice Cream Bunny* scored a 12% on the popcornmeter (audience vote metric) out of a scale of 100, *Ax 'Em* scored a 36% on the popcornmeter, *2025 - The World Enslaved by a Virus* scored a 0% on the popcornmeter from Rotten Tomatoes. All of these movies scored generally low on this audience vote metric and thus confirms that these movies were of low quality.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -654,7 +654,7 @@ low_success_3 |>
 
 **Question #3**: Choose a prestige actor or director and confirm that they have many projects with high scores on your success metric.
 
-After researching some of the most prestigious directors in the movie business, I found Steven Spielberg among the most popular directors and decided to use his data as a validation source for my success metric. Taking a look at the distribution of success for his works in the past, I found that a large majority of his works score higher on the success index than about 75% of the entire movie data set. This is a good indication that Steven Spielberg’s work is typically more successful.
+After researching some of the most prestigious directors in the movie business, I found Steven Spielberg among the most popular directors and decided to use his data as a validation source for my success metric. Taking a look at the distribution of success for his works in the past below, I found that a large majority of his works score higher on the success index than about 75% of the entire movie data set (indicated by the red dashed line). This is a good indication that Steven Spielberg’s work is typically more successful.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -903,7 +903,9 @@ successful_movies_split_genres |>
        x = "Decade",
        y = "Total Successful Movies") +
   scale_fill_discrete(name = "Genres") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  scale_fill_manual(name = "Genres",
+                    values = c("Action" = "#2F3C7E", "Drama" = "#F96167"))
 
 
 
@@ -964,7 +966,7 @@ second_highest_percent <- percentage_successful |>
 
 ```
 
-After taking a closer look, I found that actually the Sci-Fi genre produced the highest percentage of successes with `{r} round(highest_percent, 2)`% of successful movies, followed by Adventure with insert percentage here `{r} round(second_highest_percent, 2)`%. While the genres Action and Drama had the **most** successes, this could have been due to the considerable amount of movies produced in those genres. Sometimes, it is less about the quantity produced and more about the quality being produced. Despite the Sci-Fi genre not producing nearly the same amount of films as the Action and Drama genres, the percentage of successful films to come out of this genre is higher than the others, which is why we need to consider the Sci-Fi genre as a successful genre as well.
+After taking a closer look, I found that actually the Sci-Fi genre produced the highest percentage of successes with `{r} round(highest_percent, 2)`% of successful movies, followed by Adventure with `{r} round(second_highest_percent, 2)`%. While the genres Action and Drama had the **most** successes, this could have been due to the considerable amount of movies produced in those genres. Sometimes, it is less about the quantity produced and more about the quality being produced. Despite the Sci-Fi genre not producing nearly the same amount of films as the Action and Drama genres, the percentage of successful films to come out of this genre is higher than the others, which is why we need to consider the Sci-Fi genre as a successful genre as well.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1061,7 +1063,11 @@ successful_movies_split_genres |>
 
 ### Genre Selection
 
-The Drama genre’s dominance in the film industry was evident from the earliest days into the 21st century, with a consistently high output of successful movies. Drama movies succeeded in the 20th century, a period of significant social change and historical events, by evoking emotions and connecting with its audience’s experience. Over time, as the world experienced a technology boom, the movie industry also reflected this by observing a shift in genre success. Starting in the 2010s decade, the Action genre overtook Drama as the most dominant genre, producing more successful movies. The introduction of new technology like computer-generated imagery (CGI) and advanced stunt technology allowed for bolder and more fantastical movie production, propelling newer genres like Action to overtake traditional movies. However, despite the high output of successful Action films in more recent decades, its proportion of successful movies in relation to its total output lags behind genres like Sci-Fi and Adventure which each produce more successful movies per movie created in their respective genres. Since the Sci-Fi genre has a high success rate and somewhat of a low production (as compared to other genres), I would like to pursue a movie in the **Sci-Fi** genre.
+The Drama genre’s dominance in the film industry was evident from the earliest days into the 21st century, with a consistently high output of successful movies. Drama movies succeeded in the 20th century, a period of significant social change and historical events, by evoking emotions and connecting with its audience’s experience. 
+
+Over time, as the world experienced a technology boom, the movie industry also reflected this by observing a shift in genre success. Starting in the 2010s decade, the Action genre overtook Drama as the most dominant genre, producing more successful movies. The introduction of new technology like computer-generated imagery (CGI) and advanced stunt technology allowed for bolder and more fantastical movie production, propelling newer genres like Action to overtake traditional movies. 
+
+However, despite the high output of successful Action films in more recent decades, its proportion of successful movies in relation to its total output lags behind genres like Sci-Fi and Adventure which each produce more successful movies per movie created in their respective genres. Since the Sci-Fi genre has a high success rate and somewhat of a low production (as compared to other genres), I would like to pursue a movie in the **Sci-Fi** genre.
 
 ## Successful Personnel in the Genre
 
@@ -1113,7 +1119,7 @@ steven_rank <- scifi_directors_genre_split |>
 cat("Steven Spielberg Top ", round(steven_rank*100, 2), "% of Sci-Fi Directors")
 
 ```
-In the histogram below, Steven Spielberg actually ranks in the top `{r} round(steven_rank*100, 2)`% of Sci-Fi directors, solidifying his position as a highly successful director among the most top tier Sci-Fi directors.
+In the histogram below, Steven Spielberg actually ranks in the top `{r} round(steven_rank*100, 2)`% of Sci-Fi directors, solidifying his position as a highly successful director among the most top tier Sci-Fi directors. The blue dashed line indicates where Spielberg's average success metric falls in relation to other Sci-Fi directors.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1132,7 +1138,7 @@ scifi_directors_genre_split |>
 
 ```
 
-Taking a closer look at the Sci-Fi films that Spielberg has produced, we can see that a large majority of the Sci-Fi films Spielberg has been a part of have been successes.
+Taking a closer look at the Sci-Fi films that Spielberg has produced, we can see that a large majority of the Sci-Fi films Spielberg has been a part of have been successes. The red dashed line indicates the success threshold of v = 0.2.
 
 ```{r, message = FALSE, warning = FALSE, fig.width = 18, fig.height = 6}
 #| code-fold: true
@@ -1184,7 +1190,6 @@ steven_spielberg_scifi |>
   scale_fill_discrete(name = "Movie Outcome", 
                       labels = c("Unsuccessful", "Successful"),
                       guide = guide_legend(reverse = TRUE))
-
 ```
 ### Acting Talent
 
@@ -1221,7 +1226,9 @@ indiana_jones_movies |>
        fill = "Directors") +
   theme(legend.position = "bottom") +
   scale_x_discrete(limits = movie_order) +
-  scale_fill_discrete(guide = guide_legend(reverse = TRUE))
+  scale_fill_manual(values = c("Steven Spielberg" = "#519DE9", "James Mangold" = "#f94449"),
+                    guide = guide_legend(reverse = TRUE))
+  
 
 
 ```
@@ -1250,6 +1257,7 @@ scifi_young_actors_genre_split |>
                 options = list(pageLength = 10))
 
 ```
+
 ```{r echo = FALSE}
 
 tom_holland_success <- scifi_young_actors_genre_split |>
@@ -1259,7 +1267,7 @@ tom_holland_success <- scifi_young_actors_genre_split |>
 
 ```
 
-Taking a look at some of the top actors/actresses below the age of 30, I found that Tom Holland ranks relatively high up with a success index of `{r} round(tom_holland_success, 3)`. Additionally, both of the Sci-Fi films he's starred in of have scored very high on the success index, demonstrating his existing experience in this genre. 
+Taking a look at some of the top actors/actresses below the age of 30, I found that Tom Holland ranks very high up (being 5th in average success out of 526 actors/actresses) in the top 1%, with a success index of `{r} round(tom_holland_success, 3)`. Additionally, both of the Sci-Fi films he's starred in have scored very high on the success index, demonstrating his existing experience in this genre. 
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1269,14 +1277,14 @@ tom_holland_projects <- scifi_young_actors_genre_split |>
 
 tom_holland_projects |>
   ggplot(aes(x = primaryTitle, y = success)) +
-  geom_bar(stat = "identity", width = 0.5, fill = "#A2D9D9") +
+  geom_bar(stat = "identity", width = 0.5, fill = "#F4B678") +
   labs(title = "Tom Holland's Sci-Fi Films",
        x = "Movie Title",
        y = "Success Index")
 
 
 ```
-I knew I wanted to pick a young talent with experience as a lead in major films. Tom Holland with his impressive résumé, including his starring role as Spider-Man in the Marvel Cinematic Universe presents him an ideal candidate. Even with the blockbuster movies he’s already been a part of, Holland can benefit from continuing to work with experienced Hollywood talent, like Harrison Ford.
+I knew I wanted to pick a young talent with experience as a lead in major films. Tom Holland with his impressive résumé, including his starring role as Spider-Man in the Marvel Cinematic Universe, presents him as an ideal candidate. Even with the blockbuster movies he’s already been a part of, Holland can benefit from continuing to work with experienced Hollywood talent, like Harrison Ford.
 
 ## Nostalgia and Remakes
 
@@ -1356,6 +1364,6 @@ Harrison Ford's and Steven Spielberg’s collaboration on the Indiana Jones fran
 
 ### Trailer
 
-From director Steven Spielberg, the visionary mind behind E.T. the Extra-Terrestrial; and from actor Harrison Ford, Hollywood icon and star of Indiana Jones; and from actor Tom Holland, popular upcoming star of the Sci-Fi genre, comes the timeless tale, Back to the Future. A story of adventure, time travel, and imagination. Coming soon to a theater near you!
+From director Steven Spielberg, the visionary mind behind *E.T. the Extra-Terrestrial*; and from actor Harrison Ford, Hollywood icon and star of Indiana Jones; and from actor Tom Holland, popular upcoming star of the Sci-Fi genre, comes the timeless tale, *Back to the Future*. A story of adventure, time travel, and imagination. Coming soon to a theater near you!
 
 
