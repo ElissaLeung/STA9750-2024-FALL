@@ -4,3 +4,12 @@
 .Ruserdata
 
 /.quarto/
+.Rproj.user
+*/*_cache/*
+*tsv*
+*csv*
+*xlsx*
+*zip
+*gz
+.DS_Store
+.Rhistory
