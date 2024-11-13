@@ -160,7 +160,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#data-iii-congressional-boundary-files-2014-to-present" id="toc-data-iii-congressional-boundary-files-2014-to-present" class="nav-link" data-scroll-target="#data-iii-congressional-boundary-files-2014-to-present">Data III: Congressional Boundary Files 2014 to Present</a></li>
   </ul></li>
   <li><a href="#initial-exploration-of-vote-count-data" id="toc-initial-exploration-of-vote-count-data" class="nav-link" data-scroll-target="#initial-exploration-of-vote-count-data">Initial Exploration of Vote Count Data</a></li>
-  <li><a href="#preliminary-questions" id="toc-preliminary-questions" class="nav-link" data-scroll-target="#preliminary-questions">Preliminary Questions</a></li>
   <li><a href="#importing-and-plotting-shape-file-data" id="toc-importing-and-plotting-shape-file-data" class="nav-link" data-scroll-target="#importing-and-plotting-shape-file-data">Importing and Plotting Shape File Data</a>
   <ul class="collapse">
   <li><a href="#choropleth-visualization-of-the-2000-presidential-election-electoral-college-results" id="toc-choropleth-visualization-of-the-2000-presidential-election-electoral-college-results" class="nav-link" data-scroll-target="#choropleth-visualization-of-the-2000-presidential-election-electoral-college-results">Choropleth Visualization of the 2000 Presidential Election Electoral College Results</a></li>
@@ -305,7 +304,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="data-iii-congressional-boundary-files-2014-to-present" class="level3">
 <h3 class="anchored" data-anchor-id="data-iii-congressional-boundary-files-2014-to-present">Data III: Congressional Boundary Files 2014 to Present</h3>
-<p>Additionally, for more recent elections from 2014 to 2022, we can download shapefiles from the <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html">US Census Bureau</a>. The following code will automaticall download these congressional district shapefiles.</p>
+<p>Additionally, for more recent elections from 2014 to 2022, we can download shapefiles from the <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html">US Census Bureau</a>. The following code will automatically download these congressional district shapefiles.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -357,11 +356,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="initial-exploration-of-vote-count-data" class="level2">
 <h2 class="anchored" data-anchor-id="initial-exploration-of-vote-count-data">Initial Exploration of Vote Count Data</h2>
 <p>Before beginning any specific deep-dive analysis, it is important to conduct some preliminary exploration of our data sets to understand the information that we have.</p>
-</section>
-<section id="preliminary-questions" class="level2 {callout-tip}">
-<h2 class="anchored" data-anchor-id="preliminary-questions">Preliminary Questions</h2>
-<p>Below are some preliminary questions we will answer as an initial exploration of our data 1. Which states have gained and lost the most seats in the US House of Representatives between 1976 and 2022? 2. New York State has a unique “fusion” voting system where one candidate can appear on multiple “lines” on the ballot and their vote counts are totaled. For instance, in 2022, Jerrold Nadler appeared on both the Democrat and Working Families party lines for NYS’ 12th Congressional District. He received 200,890 votes total (184,872 as a Democrat and 16,018 as WFP), easily defeating Michael Zumbluskas, who received 44,173 votes across three party lines (Republican, Conservative, and Parent). Are there any elections in our data where the election would have had a different outcome if the “fusion” system was not used and candidates only received the votes they received from their “major party line” (Democrat or Republican) and not their total number of votes across all lines? 3. Do presidential candidates tend to run ahead of or run behind congressional candidates in the same state? That is, does a Democratic candidate for president tend to get more votes in a given state than all Democratic congressional candidates in the same state? Does this trend differ over time? Does it differ across states or across parties? Are any presidents particularly more or less popular than their co-partisans?</p>
-</section>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Preliminary Questions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Below are some preliminary questions we will answer as an initial exploration of our data</p>
+<ol type="1">
+<li>Which states have gained and lost the most seats in the US House of Representatives between 1976 and 2022?</li>
+<li>New York State has a unique “fusion” voting system where one candidate can appear on multiple “lines” on the ballot and their vote counts are totaled. For instance, in 2022, Jerrold Nadler appeared on both the Democrat and Working Families party lines for NYS’ 12th Congressional District. He received 200,890 votes total (184,872 as a Democrat and 16,018 as WFP), easily defeating Michael Zumbluskas, who received 44,173 votes across three party lines (Republican, Conservative, and Parent). Are there any elections in our data where the election would have had a different outcome if the “fusion” system was not used and candidates only received the votes they received from their “major party line” (Democrat or Republican) and not their total number of votes across all lines?</li>
+<li>Do presidential candidates tend to run ahead of or run behind congressional candidates in the same state? That is, does a Democratic candidate for president tend to get more votes in a given state than all Democratic congressional candidates in the same state? Does this trend differ over time? Does it differ across states or across parties? Are any presidents particularly more or less popular than their co-partisans?</li>
+</ol>
+</div>
+</div>
 <p><strong>Question 1: Which states have gained and lost the most seats in the US House of Representatives between 1976 and 2022?</strong></p>
 <p>First, we would like to take a look at the change in US House seats from 1976 to 2022, to determine if there are any significant changes. There are a total of 435 members of the House of Representatives, each state is allowed a specific number of representatives based on their population size. Over time, certain states have gained and/or lost seats based on population changes. Since the US House seats directly impact the number of electoral college votes a state receives, this is an important metric to take a look at for our analysis later.</p>
 <div class="cell">
@@ -440,7 +452,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>After gathering the house seat change from 1976 to 2022, I found that 16 states had no seat change (ALABAMA, ALASKA, ARKANSAS, DELAWARE, HAWAII, IDAHO, MAINE, MARYLAND, MINNESOTA, MONTANA, NEBRASKA, NEW HAMPSHIRE, NORTH DAKOTA, RHODE ISLAND, VERMONT, WYOMING), while 34 states did. Of these 34 states, 15 states gained seats while 19 states lost seats. Texas gained the most seats from 1976 with 14 gained seats. While New York lost the most seats from 1976 with 13 lost seats.</p>
+<p>After gathering the house seat change from 1976 to 2022, I found that 16 states had no seat change (Alabama, Alaska, Arkansas, Delaware, Hawaii, Idaho, Maine, Maryland, Minnesota, Montana, Nebraska, New Hampshire, North Dakota, Rhode Island, Vermont, Wyoming), while 34 states did. Of these 34 states, 15 states gained seats while 19 states lost seats. Texas gained the most seats from 1976 with 14 gained seats. While New York lost the most seats from 1976 with 13 lost seats.</p>
 <p><strong>Question 2: New York State has a unique “fusion” voting system where one candidate can appear on multiple “lines” on the ballot and their vote counts are totaled. For instance, in 2022, Jerrold Nadler appeared on both the Democrat and Working Families party lines for NYS’ 12th Congressional District. He received 200,890 votes total (184,872 as a Democrat and 16,018 as WFP), easily defeating Michael Zumbluskas, who received 44,173 votes across three party lines (Republican, Conservative, and Parent).</strong></p>
 <p><strong>Are there any elections in our data where the election would have had a different outcome if the “fusion” system was not used and candidates only received the votes they received from their “major party line” (Democrat or Republican) and not their total number of votes across all lines?</strong></p>
 <p>The “fusion” voting system allows candidates that have their name appear on multiple party lines on the ballot to have their votes counted under one total. We will take a look at whether the fusion voting system creates a substantial change in candidates’ success. We will do so by taking a look at election outcomes with and without the fusion voting system.</p>
@@ -642,6 +654,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>From our plot above, we find that the Democratic Party until 1996 experienced on average less votes for the presidential candidate than its co-partisans did across the 50 states and DC. While the Republican Party only saw a drop in its presidential elections in 1992, 1996, and 2016. In more recent years, it seems that for both parties, the presidential candidate generally has been more popular than its co-partisans.</p>
+</section>
 <section id="importing-and-plotting-shape-file-data" class="level2">
 <h2 class="anchored" data-anchor-id="importing-and-plotting-shape-file-data">Importing and Plotting Shape File Data</h2>
 <p>Below is the code used to read in the shape files from the zip archives we downloaded earlier, this will automatically read in only the shape file (<code>shp</code>) from each of these archives.</p>

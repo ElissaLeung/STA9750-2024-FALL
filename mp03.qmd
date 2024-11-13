@@ -123,7 +123,7 @@ for (i in 95:112) {
 
 ### Data III: Congressional Boundary Files 2014 to Present
 
-Additionally, for more recent elections from 2014 to 2022, we can download shapefiles from the [US Census Bureau](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html). The following code will automaticall download these congressional district shapefiles.
+Additionally, for more recent elections from 2014 to 2022, we can download shapefiles from the [US Census Bureau](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html). The following code will automatically download these congressional district shapefiles.
 
 ```{r, label = 'congressional_boundaries_present', message = FALSE, warning = FALSE, cache = TRUE}
 #| code-fold: true
@@ -179,9 +179,10 @@ get_state_file_census("tl_2020_us_state", 2020)
 Before beginning any specific deep-dive analysis, it is important to conduct some preliminary exploration of our data sets to understand the information that we have.
 
 
-::: {callout-tip}
+::: callout-tip
 ## Preliminary Questions
 Below are some preliminary questions we will answer as an initial exploration of our data
+
 1.  Which states have gained and lost the most seats in the US House of Representatives between 1976 and 2022?
 2.  New York State has a unique “fusion” voting system where one candidate can appear on multiple “lines” on the ballot and their vote counts are totaled. For instance, in 2022, Jerrold Nadler appeared on both the Democrat and Working Families party lines for NYS’ 12th Congressional District. He received 200,890 votes total (184,872 as a Democrat and 16,018 as WFP), easily defeating Michael Zumbluskas, who received 44,173 votes across three party lines (Republican, Conservative, and Parent). Are there any elections in our data where the election would have had a different outcome if the “fusion” system was not used and candidates only received the votes they received from their “major party line” (Democrat or Republican) and not their total number of votes across all lines?
 3.  Do presidential candidates tend to run ahead of or run behind congressional candidates in the same state? That is, does a Democratic candidate for president tend to get more votes in a given state than all Democratic congressional candidates in the same state? Does this trend differ over time? Does it differ across states or across parties? Are any presidents particularly more or less popular than their co-partisans?
@@ -261,7 +262,7 @@ seat_change_1976_2022 |>
   
 ```
 
-After gathering the house seat change from 1976 to 2022, I found that `{r} no_change` states had no seat change (`{r} no_change_seats`), while `{r} 50 - no_change` states did. Of these `{r} 50 - no_change` states, `{r} gain_seats` states gained seats while `{r} lost_seats` states lost seats. Texas gained the most seats from 1976 with `{r} gained_most_seats` gained seats. While New York lost the most seats from 1976 with `{r} lost_most_seats` lost seats.
+After gathering the house seat change from 1976 to 2022, I found that `{r} no_change` states had no seat change (`{r} str_to_title(no_change_seats)`), while `{r} 50 - no_change` states did. Of these `{r} 50 - no_change` states, `{r} gain_seats` states gained seats while `{r} lost_seats` states lost seats. Texas gained the most seats from 1976 with `{r} gained_most_seats` gained seats. While New York lost the most seats from 1976 with `{r} lost_most_seats` lost seats.
 
 **Question 2: New York State has a unique “fusion” voting system where one candidate can appear on multiple “lines” on the ballot and their vote counts are totaled. For instance, in 2022, Jerrold Nadler appeared on both the Democrat and Working Families party lines for NYS’ 12th Congressional District. He received 200,890 votes total (184,872 as a Democrat and 16,018 as WFP), easily defeating Michael Zumbluskas, who received 44,173 votes across three party lines (Republican, Conservative, and Parent).**
 
