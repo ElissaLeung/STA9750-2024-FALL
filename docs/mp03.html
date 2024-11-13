@@ -202,8 +202,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p><img src="vote.jpg" class="img-fluid"></p>
-<p>Every four years, the US holds a presidential election, where citizens go to polling sites to cast their votes for potential presidential candidates. The way these popular votes are handled in each state have varied over time. Though, the following has remained the same: * In each of the 50 states, there are R + 2 electoral college votes (where R is the number of Representatives the state has in the US House of Representatives) * For the purposes of this assignment, we will be counting each distinct district as one Representative * States are able to allocate these ECVs however they want * The candidate that receives the <strong>majority</strong> of ECVs becomes the President</p>
-<p>There are essentially no rules in place on how the R + 2 ECVs for each state are allocated in the Constitution. Thus, at different points in time, various states have allocated their ECVs with the following methods: * Direct allocation of ECVs by state legislature (no vote) * Allocation of all ECVs to winner of state-wide popular vote * Allocation of all ECVs to winner of nation-wide popular vote * Allocation of R ECVs to popular vote winner by congressional district + allocation of remaining 2 ECVs to the state-wide popular vote winner</p>
+<p>Every four years, the US holds a presidential election, where citizens go to polling sites to cast their votes for potential presidential candidates. The way these popular votes are handled in each state have varied over time. Though, the following has remained the same:</p>
+<ul>
+<li>In each of the 50 states, there are R + 2 electoral college votes (where R is the number of Representatives the state has in the US House of Representatives)</li>
+<li>For the purposes of this assignment, we will be counting each distinct district as one Representative</li>
+<li>States are able to allocate these ECVs however they want</li>
+<li>The candidate that receives the <strong>majority</strong> of ECVs becomes the President</li>
+</ul>
+<p>There are essentially no rules in place on how the R + 2 ECVs for each state are allocated in the Constitution. Thus, at different points in time, various states have allocated their ECVs with the following methods:</p>
+<ul>
+<li>Direct allocation of ECVs by state legislature (no vote)</li>
+<li>Allocation of all ECVs to winner of state-wide popular vote</li>
+<li>Allocation of all ECVs to winner of nation-wide popular vote</li>
+<li>Allocation of R ECVs to popular vote winner by congressional district + allocation of remaining 2 ECVs to the state-wide popular vote winner</li>
+</ul>
 <p>Currently, 48 states use the state-wide popular vote ECV allocation method. The only two states that have diverged from this are Maine and Nebraska, which use the final option.</p>
 <p>The goal for this project is to explore the various electoral college vote (ECV) allocation methods for the presidential elections and assess the outcomes of each election had these methods been different.</p>
 <p>We will be using data from the <a href="https://electionlab.mit.edu/">MIT Election Data Science Lab</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> which has collected votes from all biennial congressional races in all 50 states and the statewide presidential vote counts from 1976 to 2022. Furthermore to assist with our map data visualization, we will be utilizing the congressional and/or state shape files created by <a href="https://cdmaps.polisci.ucla.edu/">Lewis <em>et al.</em></a> (1976-2012) and the <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html">US Census Bureau</a> (2014-2022). With this data, we hope to visualize past election outcomes and assess the fairness of various ECV allocation schemes.</p>
@@ -1045,7 +1057,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="comparing-the-effects-of-ecv-allocation-rules" class="level2">
 <h2 class="anchored" data-anchor-id="comparing-the-effects-of-ecv-allocation-rules">Comparing the Effects of ECV Allocation Rules</h2>
 <p>Currently, electoral college votes are allocated in a state-wide winner-take-all fashion for 48 states and the District of Columbia. For the remaining two states, Nebraska and Maine, a district-wide winner-take-all + state-wide “at large” votes strategy is utilized. Throughout the course of history, various strategies have been used. This begs the question if election results would have been significantly different if all states used different ECV allocation rules.</p>
-<p>Lastly, we will be taking a look at the various ECV allocation strategies to determine if any significant election changes would have occurred with alternative methods. We will be allocating ECVs with the following strategies: * State-Wide Winner-Take-All * District-Wide Winner-Take-All + State-Wide “At Large” Votes * State-Wide Proportional * National Proportional</p>
+<p>Lastly, we will be taking a look at the various ECV allocation strategies to determine if any significant election changes would have occurred with alternative methods. We will be allocating ECVs with the following strategies:</p>
+<ul>
+<li>State-Wide Winner-Take-All</li>
+<li>District-Wide Winner-Take-All + State-Wide “At Large” Votes</li>
+<li>State-Wide Proportional</li>
+<li>National Proportional</li>
+</ul>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>

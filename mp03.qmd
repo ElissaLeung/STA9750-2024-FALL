@@ -14,12 +14,14 @@ format:
 ![](vote.jpg)
 
 Every four years, the US holds a presidential election, where citizens go to polling sites to cast their votes for potential presidential candidates. The way these popular votes are handled in each state have varied over time. Though, the following has remained the same:
+
 * In each of the 50 states, there are R + 2 electoral college votes (where R is the number of Representatives the state has in the US House of Representatives)
-  * For the purposes of this assignment, we will be counting each distinct district as one Representative
+* For the purposes of this assignment, we will be counting each distinct district as one Representative
 * States are able to allocate these ECVs however they want
 * The candidate that receives the **majority** of ECVs becomes the President
 
 There are essentially no rules in place on how the R + 2 ECVs for each state are allocated in the Constitution. Thus, at different points in time, various states have allocated their ECVs with the following methods:
+
 * Direct allocation of ECVs by state legislature (no vote)
 * Allocation of all ECVs to winner of state-wide popular vote
 * Allocation of all ECVs to winner of nation-wide popular vote
@@ -872,6 +874,7 @@ animate(animated_plot, renderer = gifski_renderer(file = paste0(directory, "/ele
 Currently, electoral college votes are allocated in a  state-wide winner-take-all fashion for 48 states and the District of Columbia. For the remaining two states, Nebraska and Maine, a district-wide winner-take-all + state-wide “at large” votes strategy is utilized. Throughout the course of history, various strategies have been used. This begs the question if election results would have been significantly different if all states used different ECV allocation rules.
 
 Lastly, we will be taking a look at the various ECV allocation strategies to determine if any significant election changes would have occurred with alternative methods. We will be allocating ECVs with the following strategies:
+
 * State-Wide Winner-Take-All
 * District-Wide Winner-Take-All + State-Wide “At Large” Votes
 * State-Wide Proportional
