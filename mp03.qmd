@@ -11,6 +11,8 @@ format:
 
 ## Introduction
 
+![](vote.jpg)
+
 Every four years, the US holds a presidential election, where citizens go to polling sites to cast their votes for potential presidential candidates. The way these popular votes are handled in each state have varied over time. Though, the following has remained the same:
 * In each of the 50 states, there are R + 2 electoral college votes (where R is the number of Representatives the state has in the US House of Representatives)
   * For the purposes of this assignment, we will be counting each distinct district as one Representative
