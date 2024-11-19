@@ -122,8 +122,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
 
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -152,9 +166,10 @@ window.Quarto = {
 };
 </script>
 
+<link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -175,7 +190,42 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#data-sub-sampling" id="toc-data-sub-sampling" class="nav-link" data-scroll-target="#data-sub-sampling">Data Sub-Sampling</a></li>
+  <li><a href="#initial-exploration" id="toc-initial-exploration" class="nav-link" data-scroll-target="#initial-exploration">Initial Exploration</a>
+  <ul class="collapse">
+  <li><a href="#data-cleaning" id="toc-data-cleaning" class="nav-link" data-scroll-target="#data-cleaning">Data Cleaning</a></li>
+  <li><a href="#preliminary-exploration-questions" id="toc-preliminary-exploration-questions" class="nav-link" data-scroll-target="#preliminary-exploration-questions">Preliminary Exploration Questions</a></li>
+  </ul></li>
+  <li><a href="#quantifying-success" id="toc-quantifying-success" class="nav-link" data-scroll-target="#quantifying-success">Quantifying Success</a>
+  <ul class="collapse">
+  <li><a href="#success-metric-validation" id="toc-success-metric-validation" class="nav-link" data-scroll-target="#success-metric-validation">Success Metric Validation</a></li>
+  </ul></li>
+  <li><a href="#examining-success-by-genre-and-decade" id="toc-examining-success-by-genre-and-decade" class="nav-link" data-scroll-target="#examining-success-by-genre-and-decade">Examining Success by Genre and Decade</a>
+  <ul class="collapse">
+  <li><a href="#exploration-questions" id="toc-exploration-questions" class="nav-link" data-scroll-target="#exploration-questions">Exploration Questions</a></li>
+  <li><a href="#genre-selection" id="toc-genre-selection" class="nav-link" data-scroll-target="#genre-selection">Genre Selection</a></li>
+  </ul></li>
+  <li><a href="#successful-personnel-in-the-genre" id="toc-successful-personnel-in-the-genre" class="nav-link" data-scroll-target="#successful-personnel-in-the-genre">Successful Personnel in the Genre</a>
+  <ul class="collapse">
+  <li><a href="#successful-director" id="toc-successful-director" class="nav-link" data-scroll-target="#successful-director">Successful Director</a></li>
+  <li><a href="#acting-talent" id="toc-acting-talent" class="nav-link" data-scroll-target="#acting-talent">Acting Talent</a></li>
+  </ul></li>
+  <li><a href="#nostalgia-and-remakes" id="toc-nostalgia-and-remakes" class="nav-link" data-scroll-target="#nostalgia-and-remakes">Nostalgia and Remakes</a></li>
+  <li><a href="#final-movie-pitch" id="toc-final-movie-pitch" class="nav-link" data-scroll-target="#final-movie-pitch">Final Movie Pitch</a>
+  <ul class="collapse">
+  <li><a href="#movie-pitch" id="toc-movie-pitch" class="nav-link" data-scroll-target="#movie-pitch">Movie Pitch</a></li>
+  <li><a href="#trailer" id="toc-trailer" class="nav-link" data-scroll-target="#trailer">Trailer</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
@@ -712,9 +762,9 @@ After:  6.868</code></pre>
 <h2 class="anchored" data-anchor-id="quantifying-success">Quantifying Success</h2>
 <p>By the end of the project, we would like to propose successful movies. Before doing so, we need to have a success measure beyond what IMDb has already provided. We can assume that a successful title would be of high quality (high average rating) and has gained a broad awareness by IMDb users (large number of votes). So, a success metric combining these two metrics would be logical.</p>
 <p>For my success metric, I decided to normalize the average rating and number of votes to create an index (ranging from 0 to 1) allowing for a simpler and holistic comparison for each of the movies. I wanted to account for both these values in my success metric. However, I noticed the drastic differences in the number of votes for certain movies. So, to mitigate this observation, I included a square root function for the votes proportion. Below is my success metric calculation:</p>
-<p><span class="math display">\[
+<p><span class="math display">
 success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{max(numVotes)})
-\]</span></p>
+</span></p>
 <p>Below is the code used to create a new <code>success</code> column with my newly defined success metric from above.</p>
 <div class="cell">
 <details class="code-fold">

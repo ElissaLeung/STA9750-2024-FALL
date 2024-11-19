@@ -2,6 +2,11 @@
 title: "Mini Project #02: The Business of Show Business"
 author: "Elissa Leung"
 editor: visual
+format:
+  html:
+    toc: true
+    html-math-method: katex
+    css: styles.css
 ---
 
 ## Introduction
@@ -279,6 +284,7 @@ Before starting any deep-dive analysis, it is important to do some preliminary e
 
 ::: callout-tip
 ## Preliminary Questions
+
 Below are some preliminary questions, we would like to answer as an initial exploration of our data tables.
 
 1.  How many movies are in our data set? How many TV series? How many TV episodes?
@@ -552,7 +558,7 @@ $$
 success = (\frac{averageRating}{max(averageRating)})\cdot(\sqrt\frac{numVotes}{max(numVotes)})
 $$
 
- Below is the code used to create a new `success` column with my newly defined success metric from above.
+Below is the code used to create a new `success` column with my newly defined success metric from above.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -568,6 +574,7 @@ Before proceeding with further analysis, it is important to validate the success
 
 ::: callout-tip
 ## Validation Questions
+
 Below are some questions I will be answering to provide some validation on the proposed success metric.
 
 1.  Choose the top 5-10 movies on your metric and confirm that they were indeed box office successes.
@@ -807,6 +814,7 @@ Next, to begin thinking about a movie to pitch, I would like to start with a sea
 
 ::: callout-tip
 ## Film Genre Questions
+
 By answering the following questions, I hope to narrow down an ideal film genre to explore for my movie remake pitch.
 
 1.  What was the genre with the most "successes" in each decade?
@@ -1063,9 +1071,9 @@ successful_movies_split_genres |>
 
 ### Genre Selection
 
-The Drama genre’s dominance in the film industry was evident from the earliest days into the 21st century, with a consistently high output of successful movies. Drama movies succeeded in the 20th century, a period of significant social change and historical events, by evoking emotions and connecting with its audience’s experience. 
+The Drama genre’s dominance in the film industry was evident from the earliest days into the 21st century, with a consistently high output of successful movies. Drama movies succeeded in the 20th century, a period of significant social change and historical events, by evoking emotions and connecting with its audience’s experience.
 
-Over time, as the world experienced a technology boom, the movie industry also reflected this by observing a shift in genre success. Starting in the 2010s decade, the Action genre overtook Drama as the most dominant genre, producing more successful movies. The introduction of new technology like computer-generated imagery (CGI) and advanced stunt technology allowed for bolder and more fantastical movie production, propelling newer genres like Action to overtake traditional movies. 
+Over time, as the world experienced a technology boom, the movie industry also reflected this by observing a shift in genre success. Starting in the 2010s decade, the Action genre overtook Drama as the most dominant genre, producing more successful movies. The introduction of new technology like computer-generated imagery (CGI) and advanced stunt technology allowed for bolder and more fantastical movie production, propelling newer genres like Action to overtake traditional movies.
 
 However, despite the high output of successful Action films in more recent decades, its proportion of successful movies in relation to its total output lags behind genres like Sci-Fi and Adventure which each produce more successful movies per movie created in their respective genres. Since the Sci-Fi genre has a high success rate and somewhat of a low production (as compared to other genres), I would like to pursue a movie in the **Sci-Fi** genre.
 
@@ -1073,7 +1081,7 @@ However, despite the high output of successful Action films in more recent decad
 
 ### Successful Director
 
-For my Sci-Fi movie, I would like to pick Steven Spielberg as my director. Spielberg is an experienced director, having directed many highly successful Sci-Fi movies in the past, one of them being the iconic and classic *E.T. the Extra-Terrestrial*. 
+For my Sci-Fi movie, I would like to pick Steven Spielberg as my director. Spielberg is an experienced director, having directed many highly successful Sci-Fi movies in the past, one of them being the iconic and classic *E.T. the Extra-Terrestrial*.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1119,6 +1127,7 @@ steven_rank <- scifi_directors_genre_split |>
 cat("Steven Spielberg Top ", round(steven_rank*100, 2), "% of Sci-Fi Directors")
 
 ```
+
 In the histogram below, Steven Spielberg actually ranks in the top `{r} round(steven_rank*100, 2)`% of Sci-Fi directors, solidifying his position as a highly successful director among the most top tier Sci-Fi directors. The blue dashed line indicates where Spielberg's average success metric falls in relation to other Sci-Fi directors.
 
 ```{r, message = FALSE, warning = FALSE}
@@ -1156,6 +1165,7 @@ scifi_directors_genre_split |>
        y = "Success")
 
 ```
+
 From the pie chart below, we can see that of the Sci-Fi movies Steven Spielberg has produced, 80% of them have been successes, indicating him as a great candidate to direct future Sci-Fi films.
 
 ```{r, message = FALSE, warning = FALSE}
@@ -1191,6 +1201,7 @@ steven_spielberg_scifi |>
                       labels = c("Unsuccessful", "Successful"),
                       guide = guide_legend(reverse = TRUE))
 ```
+
 ### Acting Talent
 
 Next, I would like to pick an actor/actress that has worked with Spielberg on successful films in the past. Given Harrison Ford's proven success with Steven Spielberg in the iconic Indiana Jones franchise, he would be a strong candidate for another lead role. Ford starred in all five films of the Indiana Jones franchise, the first four of which were directed by Spielberg and the last by James Mangold. Ford's collaborations with Spielberg on the Indiana Jones franchise have consistently proven to be box office successes, which contrasts the performance of franchise’s fifth installment, directed by James Mangold. As shown in the plot below, the first four films exceeded the success threshold, while the last one fell short. Ford's established work with Spielberg and their history of creating box office hits makes them a compelling choice.
@@ -1267,7 +1278,7 @@ tom_holland_success <- scifi_young_actors_genre_split |>
 
 ```
 
-Taking a look at some of the top actors/actresses below the age of 30, I found that Tom Holland ranks very high up (being 5th in average success out of 526 actors/actresses) in the top 1%, with a success index of `{r} round(tom_holland_success, 3)`. Additionally, both of the Sci-Fi films he's starred in have scored very high on the success index, demonstrating his existing experience in this genre. 
+Taking a look at some of the top actors/actresses below the age of 30, I found that Tom Holland ranks very high up (being 5th in average success out of 526 actors/actresses) in the top 1%, with a success index of `{r} round(tom_holland_success, 3)`. Additionally, both of the Sci-Fi films he's starred in have scored very high on the success index, demonstrating his existing experience in this genre.
 
 ```{r, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1284,6 +1295,7 @@ tom_holland_projects |>
 
 
 ```
+
 I knew I wanted to pick a young talent with experience as a lead in major films. Tom Holland with his impressive résumé, including his starring role as Spider-Man in the Marvel Cinematic Universe, presents him as an ideal candidate. Even with the blockbuster movies he’s already been a part of, Holland can benefit from continuing to work with experienced Hollywood talent, like Harrison Ford.
 
 ## Nostalgia and Remakes
@@ -1311,7 +1323,6 @@ back_to_the_future_basics <- scifi_successful_movies |>
 
 ```
 
-
 After taking a look at some of the most successful movies released before 2000 (without recent sequels or remakes in the past 25 years), I decided to choose [Back to the Future](https://www.imdb.com/title/tt0088763/) from 1985 as my classic movie remake. Back to the Future is an Adventure, Comedy, and Sci-Fi film with a high success index of `{r} round(back_to_the_future_basics$success, 2)`, high IMDb rating of `{r} back_to_the_future_basics$averageRating` and high number of votes at `{r} prettyNum(back_to_the_future_basics$numVotes, big.mark = ",")` votes. There were three Back to the Future movies in the franchise, the first film had the most success with the highest average rating and number of votes. The last film of the franchise was released in 1990 and there have been no remakes or additional sequels since. In my Back to the Future remake, I plan to cast Harrison Ford as the scientist, Doc Brown, and Tom Holland as Marty McFly.
 
 ```{r, message = FALSE, warning = FALSE}
@@ -1328,6 +1339,7 @@ back_to_the_future_franchise |>
   DT::datatable(rownames = FALSE)
 
 ```
+
 Since the first film was released 39 years ago in 1985, we will need to check to confirm whether key actors, directors, or writers from the original are still alive. From the Back to the Future IMDb page, I found that the primary contributors to the film were Robert Zemeckis (director and writer), Bob Gale (writer), Michael J. Fox (actor), Christopher Lloyd (actor), and Lea Thompson (actor). Since all five of the primary contributors to the original film are still alive, I will need to contact the legal department to confirm that we can secure the rights to the project before I can proceed. As a fan service, I plan to also provide cameos to the stars of the original film if they are interested in partaking in the movie reboot.
 
 ```{r, message = FALSE, warning = FALSE}
@@ -1361,9 +1373,6 @@ Harrison Ford's and Steven Spielberg’s collaboration on the Indiana Jones fran
 
 *Back to the Future* is an iconic box office hit from the mid-80s, which is due for a modern day remake. Recreating this classic Sci-Fi film, with the expertise of Steven Spielberg alongside star powers Harrison Ford and Tom Holland will surely produce a box office hit.
 
-
 ### Trailer
 
 From director Steven Spielberg, the visionary mind behind *E.T. the Extra-Terrestrial*; and from actor Harrison Ford, Hollywood icon and star of Indiana Jones; and from actor Tom Holland, popular upcoming star of the Sci-Fi genre, comes the timeless tale, *Back to the Future*. A story of adventure, time travel, and imagination. Coming soon to a theater near you!
-
-
