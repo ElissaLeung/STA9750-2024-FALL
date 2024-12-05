@@ -69,12 +69,12 @@ At CUNY, the TRS is administered as follows:
 
 In CUNY’s ORP option, the plan is more similar to the more commonly known 401(k) plan. In this plan, both the employee and employer contribute to the retirement account, which will then be invested into the employee’s choice of mutual funds (e.g. US equities, International equities, bonds, short-term debts, etc.). These investments continue to grow “tax-free” over the course of their career and in retirement until they are withdrawn. The employee takes a larger risk in this plan as once they retire and begin withdrawing funds, once the account dries up, there are no more additional funds. However, if their investment grows large enough they may have additional funds to pass down to immediate family upon death. The ORP is a defined-contribution plan since only the contributions during the employee’s career is fixed, the final balance depends on the market. 
 
-During retirement, employees have the choice of accessing and withdrawing funds at any rate, but with the nature of this retirement plan it is important to make rational withdrawal decisions. For this project, we will assume that the employee will be withdrawing 4% of the account's value per year (Shwab discussion).
+During retirement, employees have the choice of accessing and withdrawing funds at any rate, but with the nature of this retirement plan it is important to make rational withdrawal decisions. For this project, we will assume that the employee will be withdrawing 4% of the account's value per year ([Schwab discussion](https://www.schwab.com/learn/story/beyond-4-rule-how-much-can-you-spend-retirement)).
 
 The funds available in a ORP account depend strongly on the investments chosen.
 For this analysis, you can assume that the ORP participants invest in a 
 [Fidelity Freedom Fund](https://www.fidelity.com/mutual-funds/fidelity-fund-portfolios/freedom-funds) 
-with the following asset allocation:[^6]
+with the following asset allocation:
 
 - Age 25 to Age 49: 
   - 54\% US Equities
@@ -565,7 +565,7 @@ outlier_return_int_eq <- equities |>
 
 ```
 
-Let's also take a look at the time-series for the returns of each equity market. Below, we can observe that each of these markets have a relatively constant fluctuation over time. Both smooth lines plotted for each scatter plot remain around the 0% return line, indicating that the market returns are centered around 0 and a lack of a discernible trend over time. For the US Equity market, most of the returns remain within -10% and 10%. However, there is a noticeable outlier in the US Equity market on `{r} outlier_dates_us_eq` with a return of `{r} outlier_return_us_eq`%. Similarly, in the same period, the International Equity market experienced returns of `{r} outlier_return_int_eq`. Both of these lulls occuring in 2008 during the Global Financial Crisis.
+Let's also take a look at the time-series for the returns of each equity market. Below, we can observe that each of these markets have a relatively constant fluctuation over time. Both smooth lines plotted for each scatter plot remain around the 0% return line, indicating that the market returns are centered around 0 and a lack of a discernible trend over time. For the US Equity market, most of the returns remain within -10% and 10%. However, there is a noticeable outlier in the US Equity market on `{r} outlier_dates_us_eq` with a return of `{r} outlier_return_us_eq`%. Similarly, in the same period, the International Equity market experienced returns of `{r} outlier_return_int_eq`%. Both of these lulls occurring in 2008 during the Global Financial Crisis.
 
 ```{r, label = 'time_series_us_int', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -683,7 +683,7 @@ Similar to the analysis we did prior to this, there is a strong positive correla
 To take a closer look at each metric, we will summarize each metric's monthly data into annual summaries. Since our wage growth data, bond value data, and short-term value data are all *annual* percentages, we will take the average between the 12-month period for the aggregate value. On the other hand, our inflation, US equity return, and International equity return data are monthly values, so we will follow the formula:
 
 $$
-Aggregate = (\prod (1 + value)) - 1
+Aggregate = (\prod (1 + value / 100)) - 1
 $$
 Where *value* represents either inflation, US equity return or International equity return.
 
@@ -746,10 +746,9 @@ Now that we've retrieved our data sets and performed some preliminary explorator
 We will first calculate the CUNY employee's salary each year of their career (2005-2024) based on our annual aggregated wage growth and inflation data. To adjust for wage growth, we will follow the following formula:
 
 $$
-
 salary_w = salary_p * (1 + (WG / 100))
-
 $$
+
 Where:
 
 * salary~p~: salary from the previous year
@@ -758,16 +757,16 @@ Where:
 
 Then, to adjust for yearly inflation, we will use:
 
-$$
 
+$$
 salary_f = \frac{salary_w}{1-(i/100)}
-
 $$
+
 Where:
 
-* salary_w: salary after wage growth adjustments
+* salary~w~: salary after wage growth adjustments
 * i: inflation rate
-* salary_f: final salary after wage growth and inflation adjustments
+* salary~f~: final salary after wage growth and inflation adjustments
 
 Below is the data frame containing all the final calculations for salary based on the wage growth rate and inflation rate data. Based on our calculations, in about 15 years, the employee will have doubled their starting salary to $102,242.56. By the time the employee retires in 20 years, they would have tripled their initial starting salary at \$161,085.94.
 
@@ -802,6 +801,7 @@ Now, based on these salary calculations we will run our simulation for each reti
 ### TRS
 
 For the TRS retirement plan, the employee will pay a fixed percentage of their paycheck into the pension fund, based on the following contribution rates and annual salary brackets:
+   
    - \$45,000 or less: 3%
    - \$45,001 to \$55,000: 3.5%
    - \$55,001 to \$75,000: 4.5%
@@ -872,6 +872,7 @@ Next, we will take a look at the first month's payout from CUNY's Optional Retir
 ### ORP
 
 In the CUNY ORP, the employees contribute at the same rate as the TRS, with the following brackets:
+  
    - \$45,000 or less: 3%
    - \$45,001 to \$55,000: 3.5%
    - \$55,001 to \$75,000: 4.5%
@@ -999,9 +1000,9 @@ first_month_withdrawal <- round((orp_total_investment * 0.04) / 12, 2)
 
 ```
 
-After working for 20 years, the CUNY employee would end up with a total of \$`{r} prettyNum(orp_total_investment, big.mark = ",")` in their ORP retirement account. Typically, individuals would withdraw about 4% of their retirement account's value per year. So, we will take the assumption that our individual will withdraw 4% of their ORP account every year until they pass away. Thus, for their first month of retirement, they would withdraw \$`prettyNum(first_month_withdrawal, big.mark = ",")`.
+After working for 20 years, the CUNY employee would end up with a total of \$`{r} prettyNum(orp_total_investment, big.mark = ",")` in their ORP retirement account. Typically, individuals would withdraw about 4% of their retirement account's value per year. So, we will take the assumption that our individual will withdraw 4% of their ORP account every year until they pass away. Thus, for their first month of retirement, they would withdraw \$`{r} prettyNum(first_month_withdrawal, big.mark = ",")`.
 
-Comparing the first month's retirement payout for each plan, we find that the TRS plan provides a bigger payout than the ORP, with \$`{r} prettyNum(round(retirement_benefit_trs/12, 2), big.mark = ",")` versus \$`prettyNum(first_month_withdrawal, big.mark = ",")` from the ORP. While the TRS plan has shown its benefits in early retirement stages as compared to ORP, it still is not yet clear which plan will be most beneficial in the long term.
+Comparing the first month's retirement payout for each plan, we find that the TRS plan provides a bigger payout than the ORP, with \$`{r} prettyNum(round(retirement_benefit_trs/12, 2), big.mark = ",")` versus \$`{r} prettyNum(first_month_withdrawal, big.mark = ",")` from the ORP. While the TRS plan has shown its benefits in early retirement stages as compared to ORP, it still is not yet clear which plan will be most beneficial in the long term.
 
 Next, we will take a look at the long-term average analysis, with future projections of our data based on the long-run averages we calculated earlier.
 
@@ -1626,6 +1627,15 @@ df_greater |>
 ```
 ## Data-Driven Decision Recommendation
 
+The City University of New York (CUNY) provides its new employees with a choice between two retirement plan options: the defined-benefit Teachers Retirement System pension plan or the defined-contribution Optional Retirement Plan. When CUNY employees are between retirement plans, it is important to consider the possible factors in their decision.
+
+In this project, we examined a hypothetical scenario where an individual started working at CUNY in 2005 at 35 years old with a starting salary of $50,000. This employee would go on to work until 2024 at age 54. We also assumed that the individual lived to the age 77. Taking these assumptions into consideration with historical data on wage growth, inflation, US equity market returns, International equity market returns, bond returns and short-term debt returns, we simulated two scenarios. 
+
+Based on our preliminary analysis, we found that the TRS plan provides a guaranteed steady stream of income for individuals throughout retirement. While ORP does not guarantee the same income that TRS provides, the individual’s account will grow alongside the market and could ultimately provide significant gains in the long term or could run out before the individual dies.
+
+After generating many bootstrapping samples and re-running our retirement plan simulations for a Monte Carlo analysis, we found that the TRS plan provides a higher monthly payout in early retirement stages, but the ORP gains significant traction in later stages of retirement exceeding the monthly payout of the TRS. In all scenarios, we found that the individual always had money remaining in their account even after their death indicating favorable market returns. In 52.5% of the simulations, the average monthly payout of ORP exceeded that of TRS, further indicating an additional advantage for ORP. Our predictions are suggestive, not concrete, due to the limited 20-year data set and factors considered, highlighting the need for broader data and variables to improve accuracy. **Past performance is no guarantee of future results.**
+
+Based on our analysis with bootstrap sampling and simulations of each retirement plan, I would recommend that the employee commits to the Optional Retirement Plan (ORP). While at the beginning of retirement, ORP may not meet the same monthly payouts as TRS, this ground is eventually made up over time. Also, one can consider increasing the percentage of withdrawal from their retirement accounts to optimize their monthly payouts with ORP. Being able to have the option of having funds past your death for family members is also something I believe is important to consider, with TRS there is no option for that, with ORP and a favorable market return, individuals could make even more of their money back to pass down to family. Ultimately, decisions for retirement plans will depend on each employee’s unique circumstances and preferences.
 
 
 
