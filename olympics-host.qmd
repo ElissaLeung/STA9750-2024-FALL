@@ -1,0 +1,1842 @@
+---
+title: "Olympics Group Project: Assessing the 'Host Country Advantage' in the Olympics"
+author: "Elissa Leung"
+editor: visual
+format:
+  html:
+    toc: true
+    html-math-method: katex
+    css: styles.css
+---
+
+![](olympics.webp)
+
+## Introduction
+
+Analyzing only 1950 - 2024 data.
+
+## Data Sources
+
+```{r echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Install necessary packages
+
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("tidyverse")) install.packages("tidyverse")
+if(!require("sf")) install.packages("sf")
+if(!require("haven")) install.packages("haven")
+if(!require("DT")) install.packages("DT")
+if(!require("gt")) install.packages("gt")
+if(!require("ggplot2")) install.packages("ggplot2")
+if(!require("RColorBrewer")) install.packages("RColorBrewer")
+if(!require("stringr")) install.packages("stringr")
+if(!require("patchwork")) install.packages("patchwork")
+if(!require("gganimate")) install.packages("gganimate")
+if(!require("zoom")) install.packages("zoom")
+if(!require("gridExtra")) install.packages("gridExtra")
+if(!require("httr2")) install.packages("httr2")
+if(!require("readxl")) install.packages("readxl")
+if(!require("ggcorrplot")) install.packages("ggcorrplot")
+
+# Load packages into R
+
+library(dplyr)
+library(tidyverse)
+library(sf)
+library(haven)
+library(DT)
+library(gt)
+library(ggplot2)
+library(RColorBrewer) # different color palette options
+library(stringr)
+library(patchwork) # inset plots
+library(gganimate)
+library(zoom) # zoom for plots
+library(gridExtra) # labels outside the plot
+library(httr2)
+library(readxl) # reading excel files
+library(ggcorrplot) # correlation matrices
+
+```
+
+
+### 126 Years of Olympic Data (1896-2022)
+
+```{r, label = 'import_master_datasets', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Historical Olympic "Master" Data (1896-2022)
+
+olympic_athlete_event_details <- read_csv("Olympic_Athlete_Event_Details.csv") # used for total athletes
+olympic_country_profiles <- read_csv("Olympic_Country_Profiles.csv") # used for naming conventions
+olympic_games_summary <- read_csv("Olympic_Games_Summary.csv") # used to get host nation information
+olympic_medal_tally_history <- read_csv("Olympic_Medal_Tally_History.csv") # used to get medal total information
+
+
+```
+
+### Paris 2024 Summer Olympics Data
+
+```{r, label = 'import_paris_datasets', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# 2024 Paris Summer Olympics Data
+
+paris_medals_total_original <- read_csv("medals_total.csv") # used for medal total information
+paris_athletes_original <- read_csv("athletes.csv") # used for total athletes information
+
+```
+
+## Data Cleaning
+
+### Binding Datasets
+
+```{r, label = 'combine_medals_datasets', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Paris Data - figure out what data I actually need from here
+
+# Medals Tally Data
+
+paris_edition <- olympic_games_summary |>
+  filter(year == 2024) |>
+  pull(edition)
+
+paris_edition_id <- olympic_games_summary |>
+  filter(year == 2024) |>
+  pull(edition_id)
+
+paris_year <- 2024
+
+# Columns: country_code, country, country_long, Gold Medal, Silver Medal, Bronze Medal, Total
+# Need to adjust the country names based on the original data naming convention, will use the country profiles data to do so
+# Need to add other variables missing: edition, edition_id, and year
+# Need to rename all the columns based on the variables we have in olympic_medal_tally_history data frame
+
+paris_medals_total <- paris_medals_total_original |>
+  left_join(olympic_country_profiles, join_by("country_code" == "noc")) |>
+  rename(country_name = country.y) |>
+  select(c("country_name", "country_code", "Gold Medal", "Silver Medal", "Bronze Medal", "Total")) |>
+  mutate(edition = paris_edition,
+         edition_id = paris_edition_id,
+         year = paris_year) |>
+  rename(country = "country_name",
+         country_noc = country_code,
+         gold = "Gold Medal",
+         silver = "Silver Medal",
+         bronze = "Bronze Medal",
+         total = "Total")
+
+# need to add this data to our olympic_medal_tally_history data
+
+olympic_medal_tally_history <- rbind(olympic_medal_tally_history, paris_medals_total)
+
+
+```
+
+
+```{r, label = 'combine_athlete_datasets', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Paris Olympic Athlete Data
+
+  # Issues with last 3 records "discipline" column -- will manually correct
+
+paris_athletes_original <- paris_athletes_original |>
+  mutate(disciplines = case_when(
+    code == 1972077 ~ "['Athletics']",
+    code == 1899865 ~ "['Equestrian']",
+    code == 1924402 ~ "['Athletics']",
+    .default = disciplines
+  )) |>
+  mutate(events = case_when(
+    code == 1972077 ~ "['4 x 400m Relay Mixed']",
+    code == 1899865 ~ "['Jumping Team']",
+    code == 1924402 ~ "['Men's 4 x 400m Relay']",
+    .default = events
+  ))
+
+# Check if there's overlap in the Athlete IDs -- otherwise will be very hard to bind dataframes
+
+intersect(olympic_athlete_event_details$athlete_id, paris_athletes_original$code) # no intersect, so it's safe to bind the data frames
+
+# Next need to figure out how the olympic_athlete_event_details data frame is organized
+# Columns: edition, edition_id, country_noc, sport, event, result_id, athlete, athlete_id, pos, medal, isTeamSport, year
+  # Really only need to fill the country_noc, sport, event, athlete, athlete_id columns --> as those are the only ones we will be using later
+
+paris_athletes <- paris_athletes_original |>
+  select(c("country_code", "disciplines", "events", "name", "code")) |>
+  mutate(edition = paris_edition,
+         edition_id = paris_edition_id,
+         sports_list = substr(disciplines, 2, str_length(disciplines) - 1),
+         events_list = substr(events, 2, str_length(events) - 1))
+
+# Splitting the events column
+
+paris_athletes[c("sport_1", "sport_2")] <- str_split_fixed(paris_athletes$sports_list, ", ", 2)
+paris_athletes[c("event_1", "event_2", "event_3", "event_4", "event_5", "event_6", "event_7", "event_8")] <- str_split_fixed(paris_athletes$events_list, ", ", 8)
+
+paris_athletes <- paris_athletes |>
+  pivot_longer(!c("edition", "edition_id", "country_code", "disciplines", "events", "events_list", "name", "code", "sports_list", "sport_1", "sport_2"), names_to = "event_number", values_to = "event_original") |>
+  filter(event_original != "") |>
+  select(-c("events", "events_list", "event_number")) |>
+  pivot_longer(!c("edition", "edition_id", "country_code", "disciplines", "name", "code", "sports_list", "event_original"), names_to = "sport_number", values_to = "sport_original") |>
+  filter(sport_original != "") |>
+  mutate(event = substr(event_original, 2, str_length(event_original) - 1),
+         sport = substr(sport_original, 2, str_length(sport_original) - 1)) |>
+  select(-c('disciplines', "sports_list", "sport_number", "event_original", "sport_original")) |>
+  mutate(result_id = NA,
+         pos = NA,
+         medal = NA,
+         isTeamSport = NA) |>
+  rename(athlete_id = "code",
+         athlete = "name",
+         country_noc = country_code)
+
+olympic_athlete_event_details <- rbind(olympic_athlete_event_details, paris_athletes)
+
+
+
+```
+
+```{r, label = 'checking_for_inconsistent_data', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# # Check the amount of events one athlete can compete in
+# 
+# events_paris <- paris_athletes_original$events
+# sports_paris <- paris_athletes_original$disciplines
+# 
+# max_commas_events <- 0
+# max_commas_sports <- 0
+# max_string <- ""
+# 
+# for (i in 1:length(events_paris)) {
+#   count_events <- str_count(events_paris[i], pattern = ",")
+#   count_sports <- str_count(sports_paris[i], pattern = ",")
+#   if (count_events > max_commas_events) {
+#     max_commas_events = count_events
+#   }
+#   if (count_sports > max_commas_sports) {
+#     max_commas_sports = count_sports
+#     max_string <- sports_paris[[i]]
+#     counter <- i
+#   }
+# }
+# 
+# max_commas_events #8 commas --> 9 events
+# max_commas_sports #1 comma --> 2 sports
+# max_string
+# counter
+# 
+# # is every record stored the same way (i.e. ['sport'])
+# 
+# 
+# 
+# for (i in 1:length(sports_paris)) {
+#   bracket_1 <- str_count(sports_paris[i], pattern = "\\[")
+#   bracket_2 <- str_count(sports_paris[i], pattern = "\\]")
+#   tick <- str_count(sports_paris[i], pattern = "\\'")
+#   
+#   if (bracket_1 != 1 | bracket_2 != 1 | tick < 2) {
+#     print(sports_paris[[i]])
+#   }
+# }
+# 
+# sports_paris_new <- paris_athletes$sports_list
+# 
+# for (i in 1:length(sports_paris_new)) {
+#   bracket_1 <- str_count(sports_paris_new[i], pattern = "\\[")
+#   bracket_2 <- str_count(sports_paris_new[i], pattern = "\\]")
+#   tick <- str_count(sports_paris_new[i], pattern = "\\'")
+#   quote <- str_count(sports_paris_new[i], pattern = '\\"')
+#   
+#   str_mark <- case_when(tick == 2 & quote == 0 ~ TRUE,
+#                         tick == 0 & quote == 2 ~ TRUE,
+#                         .default = FALSE)
+#   
+#   if (bracket_1 != 0 | bracket_2 != 0 | str_mark == FALSE) {
+#     print(sports_paris_new[[i]])
+#     print(str_split_fixed(sports_paris_new[[i]], ", ", 2))
+#   }
+# }
+
+```
+
+
+```{r, label = '1950-2022', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# For remainder of analysis we will only focus on Olympics from 1950s onwards
+
+olympic_medal_tally_history <- olympic_medal_tally_history |>
+  filter(year >= 1950) |>
+  mutate(season = case_when(
+    str_detect(edition, "Summer") ~ "summer",
+    str_detect(edition, "Winter") ~ "winter"
+  ))
+
+
+```
+
+```{r, label = 'splitting_summary_data', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Include country names into Olympic Games Summary table using the country profile data table
+
+olympic_games_summary <- left_join(olympic_games_summary, olympic_country_profiles, join_by("country_noc" == "noc"))
+
+# For remainder of analysis we will only focus on Olympics from 1950s onwards
+
+olympic_games_summary <- olympic_games_summary |>
+  filter(year >= 1950, year <= 2024) |>
+  select(-c(edition_url, country_flag_url, isHeld))
+
+# adds column differentiating type of Olympics
+
+olympic_games_summary <- olympic_games_summary |>
+  mutate(season = case_when(
+    str_detect(edition, "Summer") ~ "summer",
+    str_detect(edition, "Winter") ~ "winter"
+  ))
+  
+winter_olympic_games_summary <- olympic_games_summary |>
+  filter(season == "winter")
+
+# Equestrian from 1956 is filtered out, figure out how to accommodate this
+
+summer_olympic_games_summary <- olympic_games_summary |>
+  filter(season == "summer")
+
+```
+
+```{r, label = 'olympic_athlete_event_details_adjustment', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+olympic_athlete_event_details <- olympic_athlete_event_details |>
+  mutate(year = as.numeric(substr(edition, 1, 4))) |>
+  filter(year >= 1950) |>
+  mutate(season = case_when(
+    str_detect(edition, "Summer") ~ "summer",
+    str_detect(edition, "Winter") ~ "winter"
+  ))
+
+summer_olympic_athlete_event_details <- olympic_athlete_event_details |>
+  filter(season == "summer")
+
+winter_olympic_athlete_event_details <- olympic_athlete_event_details |>
+  filter(season == "winter")
+
+```
+
+
+```{r, label = 'weighted_medal_counts', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# want to include weighted medal count (gold: 3, silver: 2, bronze: 1) and categorize data based on Olympic season
+
+olympic_medal_tally_history <- olympic_medal_tally_history |>
+  mutate(weighted_total = (gold*3) + (silver*2) + (bronze*1))
+
+olympic_medal_tally_history_summer <- olympic_medal_tally_history |>
+  filter(season == "summer")
+
+olympic_medal_tally_history_winter <- olympic_medal_tally_history |>
+  filter(season == "winter")
+
+```
+
+
+
+```{r, label = 'summer_olympic_medals_all_time', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Plot of top 10 countries with highest total medal counts for Summer Olympics
+
+top_10_alltime_summer <- olympic_medal_tally_history_summer |>
+  group_by(country) |>
+  summarize(alltime_total = sum(total)) |>
+  arrange(desc(alltime_total)) |>
+  slice_max(alltime_total, n = 10) |>
+  pull(country)
+
+olympic_medal_tally_history_summer |>
+  select(c("country", "country_noc", "gold", "silver", "bronze")) |>
+  filter(country %in% top_10_alltime_summer) |>
+  group_by(country, country_noc) |>
+  summarize(gold = sum(gold),
+            silver = sum(silver),
+            bronze = sum(bronze),
+            total = sum(gold) + sum(silver) + sum(bronze)) |>
+  ungroup() |>
+  pivot_longer(!c("country", "country_noc", "total"), names_to = "medal", values_to = "count") |>
+  ggplot(aes(x = reorder(country_noc, -total), y = count, fill = factor(medal, levels = c("bronze", "silver", "gold")))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Countries All-Time Medal Counts",
+       subtitle = "Summer Olympics",
+       x = "Country",
+       y = "Medal Count") +
+  scale_fill_manual(name = "Medal Type",
+                    values = c("bronze" = "#cd7f32", "silver" = "#C0C0C0", "gold" = "#FFD700"),
+                    labels = c("Bronze", "Silver", "Gold")) +
+  theme_bw()
+
+
+```
+
+```{r, label = 'summer_olympic_medals_weighted', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Plot of top 10 countries with highest total medal counts for Summer Olympics
+
+top_10_alltime_summer_weighted <- olympic_medal_tally_history_summer |>
+  group_by(country) |>
+  summarize(alltime_total = sum(weighted_total)) |>
+  arrange(desc(alltime_total)) |>
+  slice_max(alltime_total, n = 10) |>
+  pull(country)
+
+
+olympic_medal_tally_history_summer |>
+  select(c("country", "country_noc", "weighted_total")) |>
+  filter(country %in% top_10_alltime_summer_weighted) |>
+  group_by(country) |>
+  mutate(alltime_weighted = sum(weighted_total)) |>
+  ungroup() |>
+  ggplot(aes(x = reorder(country_noc, -alltime_weighted), y = weighted_total)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Countries All-Time Weighted Medal Counts",
+       subtitle = "Summer Olympics",
+       x = "Country",
+       y = "Medal Count") +
+  theme_bw()
+
+
+```
+
+```{r, label = 'winter_olympic_medals_all_time', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Plot of top 10 countries with highest total medal counts for Summer Olympics
+
+top_10_alltime_winter <- olympic_medal_tally_history_winter |>
+  group_by(country) |>
+  summarize(alltime_total = sum(total)) |>
+  arrange(desc(alltime_total)) |>
+  slice_max(alltime_total, n = 10) |>
+  pull(country)
+
+
+olympic_medal_tally_history_winter |>
+  select(c("country", "country_noc", "gold", "silver", "bronze")) |>
+  filter(country %in% top_10_alltime_winter) |>
+  group_by(country, country_noc) |>
+  summarize(gold = sum(gold),
+            silver = sum(silver),
+            bronze = sum(bronze),
+            total = sum(gold) + sum(silver) + sum(bronze)) |>
+  ungroup() |>
+  pivot_longer(!c("country", "country_noc", "total"), names_to = "medal", values_to = "count") |>
+  ggplot(aes(x = reorder(country_noc, -total), y = count, fill = factor(medal, levels = c("bronze", "silver", "gold")))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Countries All-Time Medal Counts",
+       subtitle = "Winter Olympics",
+       x = "Country",
+       y = "Medal Count") +
+  scale_fill_manual(name = "Medal Type",
+                    values = c("bronze" = "#cd7f32", "silver" = "#C0C0C0", "gold" = "#FFD700"),
+                    labels = c("Bronze", "Silver", "Gold")) +
+  theme_bw()
+
+
+```
+
+```{r, label = 'winter_olympic_medals_weighted', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Plot of top 10 countries with highest total medal counts for Summer Olympics
+
+top_10_alltime_winter_weighted <- olympic_medal_tally_history_winter |>
+  group_by(country) |>
+  summarize(alltime_total = sum(weighted_total)) |>
+  arrange(desc(alltime_total)) |>
+  slice_max(alltime_total, n = 10) |>
+  pull(country)
+
+
+olympic_medal_tally_history_winter |>
+  select(c("country", "country_noc", "weighted_total")) |>
+  filter(country %in% top_10_alltime_winter_weighted) |>
+  group_by(country) |>
+  mutate(alltime_weighted = sum(weighted_total)) |>
+  ungroup() |>
+  ggplot(aes(x = reorder(country_noc, -alltime_weighted), y = weighted_total)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Countries All-Time Weighted Medal Counts",
+       subtitle = "Winter Olympics",
+       x = "Country",
+       y = "Medal Count") +
+  theme_bw()
+
+
+```
+
+# need to include the average medal counts
+
+After looking at the preliminary distribution of medals over time, let's take a look at which countries have the highest average medal counts per Olympics.
+
+### Summer Olympics
+
+```{r, label = 'top_average_summer', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Also want to take into account the countries that have competed in at least 75% of the Summer Olympics
+
+# Total Summer Olympic count between 1950 and 2020
+
+summer_olympic_count <- olympic_medal_tally_history_summer |>
+  select(year) |>
+  group_by(year) |>
+  summarize(total_countries = n()) |>
+  ungroup() |>
+  mutate(total_olympics = n()) |>
+  pull(total_olympics) |>
+  unique()
+
+# 50% threshold to consider countries
+
+summer_thresh_50 <- round(summer_olympic_count * 0.50, 0)
+
+# Filtering based on the 50% threshold to focus our analysis
+
+summer_countries_50 <- olympic_medal_tally_history_summer |>
+  group_by(country, country_noc) |>
+  summarize(olympic_count = n()) |>
+  arrange(desc(olympic_count)) |>
+  filter(olympic_count >= summer_thresh_50) |>
+  pull(country)
+
+
+average_summer_weighted_50 <- olympic_medal_tally_history_summer |>
+  filter(country %in% summer_countries_50) |>
+  group_by(country, country_noc) |>
+  summarize(alltime_average = round(mean(weighted_total), 0)) |>
+  arrange(desc(alltime_average)) |>
+  ungroup()
+
+average_summer_weighted_50_countries <- average_summer_weighted_50 |>
+  pull(country)
+
+DT::datatable(setNames(average_summer_weighted_50, c("Country", "Country Abbreviation", "Average Medal Count")), 
+              caption = "Table 1: Average Medal Count per Olympics for All Countries in the Summer Olympics",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+```{r, label = 'top_average_summer_barplot', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+average_summer_weighted_50 |>
+  arrange(desc(alltime_average)) |>
+  slice_max(alltime_average, n = 10) |>
+  ggplot(aes(x = reorder(country_noc, -alltime_average), y = alltime_average)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top Countries All-Time Average Weighted Medal Counts",
+       subtitle = "Summer Olympics",
+       x = "Country",
+       y = "Average Medal Count") +
+  theme_bw()
+
+
+```
+
+### Winter Olympics
+
+```{r, label = 'top_average_winter', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Also want to take into account the countries that have competed in at least 75% of the Winter Olympics
+
+# Total Winter Olympic count between 1950 and 2022
+
+winter_olympic_count <- olympic_medal_tally_history_winter |>
+  select(year) |>
+  group_by(year) |>
+  summarize(total_countries = n()) |>
+  ungroup() |>
+  mutate(total_olympics = n()) |>
+  pull(total_olympics) |>
+  unique()
+
+# 50% threshold to consider countries
+
+winter_thresh_50 <- round(winter_olympic_count * 0.50, 0)
+
+# Filtering based on the 75% threshold to focus our analysis
+
+winter_countries_50 <- olympic_medal_tally_history_winter |>
+  group_by(country, country_noc) |>
+  summarize(olympic_count = n()) |>
+  filter(olympic_count >= winter_thresh_50) |>
+  pull(country)
+
+
+average_winter_weighted_50 <- olympic_medal_tally_history_winter |>
+  filter(country %in% winter_countries_50) |>
+  group_by(country, country_noc) |>
+  summarize(alltime_average = round(mean(weighted_total), 0)) |>
+  arrange(desc(alltime_average)) |>
+  ungroup()
+
+average_winter_weighted_50_countries <- average_winter_weighted_50 |>
+  pull(country)
+
+DT::datatable(setNames(average_winter_weighted_50, c("Country", "Country Abbreviation", "Average Medal Count")), 
+              caption = "Table 2: Average Medal Count per Olympics for All Countries in the Winter Olympics",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+```{r, label = 'top_average_winter_barplot', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+average_winter_weighted_50 |>
+  slice_max(alltime_average, n = 10) |>
+  ggplot(aes(x = reorder(country_noc, -alltime_average), y = alltime_average)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top Countries All-Time Average Weighted Medal Counts",
+       subtitle = "Winter Olympics",
+       x = "Country",
+       y = "Average Medal Count") +
+  theme_bw()
+
+
+```
+
+```{r, label = 'top_performing_countries', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Cross-reference countries from all-time total and average leaders to further specify our host country analysis
+
+# Vector of Summer Olympic countries top performers
+
+summer_olympic_countries <- intersect(top_10_alltime_summer_weighted, average_summer_weighted_50_countries)
+
+winter_olympic_countries <- intersect(top_10_alltime_winter_weighted, average_winter_weighted_50_countries)
+
+
+```
+
+Taking a preliminary analysis at our data and which countries lead in total medal counts and average medal counts, we find that `{r} summer_olympic_countries` consistently have shown success in the Summer Olympic Games and `{r} winter_olympic_countries` consistently have shown success in the Winter Olympic Games. Next, let's take a look at whether being the host country has had an impact on these countries' successes (for the countries that have hosted).
+
+## Host Analysis
+
+### Total Games Hosted
+
+#### Summer Olympic Hosts
+
+```{r, label = 'summer_host_summary_data_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Plots showing the number of Olympics hosted per country
+
+summer_olympic_games_summary_host <- summer_olympic_games_summary |>
+  group_by(country, country_noc) |>
+  summarize(total_hosted = n()) |>
+  arrange(desc(total_hosted))
+
+summer_hosts <- summer_olympic_games_summary_host |>
+  pull(country)
+
+DT::datatable(setNames(summer_olympic_games_summary_host, c("Country", "Country Code", "Total Olympics Hosted")), 
+              caption = "Table 3: Summer Olympic Host Totals",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+```
+
+```{r, label = 'summer_host_summary_plot', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+summer_olympic_games_summary_host |>
+  ggplot(aes(x = reorder(country_noc, -total_hosted), y = total_hosted)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Summer Olympics Hosted per Country (1952-2022)",
+       x = "Country",
+       y = "Host Count")
+```
+
+#### Winter Olympic Hosts
+
+```{r, label = 'winter_host_summary_data_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Table showing the number of Olympics hosted per country
+
+winter_olympic_games_summary_host <- winter_olympic_games_summary |>
+  group_by(country, country_noc) |>
+  summarize(total_hosted = n()) |>
+  arrange(desc(total_hosted))
+
+winter_hosts <- winter_olympic_games_summary_host |>
+  pull(country)
+
+DT::datatable(setNames(winter_olympic_games_summary_host, c("Country", "Country Code", "Total Olympics Hosted")), 
+              caption = "Table 4: Winter Olympic Host Totals",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+```
+
+```{r, label = 'winter_host_summary_plot', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+winter_olympic_games_summary_host |>
+  ggplot(aes(x = reorder(country_noc, -total_hosted), y = total_hosted)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Winter Olympics Hosted per Country (1952-2022)",
+       x = "Country",
+       y = "Host Count")
+
+```
+
+```{r, label = 'country_focus', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Cross-reference countries from all-time total and average leaders to further specify our host country analysis
+
+# Vector of Summer Olympic countries top performers
+
+summer_host_country_focus <- intersect(summer_olympic_countries, summer_hosts)
+
+winter_host_country_focus <- intersect(winter_olympic_countries, winter_hosts)
+
+```
+
+### Medal Progression for Hosts
+
+For the Summer Olympic Games, we will be focused on analyzing the medal progression of the following countries: `{r} summer_host_country_focus`. And, for the Winter Olympic Games, we will focus on these countries: `{r} winter_host_country_focus` in our analysis.
+
+Below, we will plot the medal progression for each of the host countries in the Summer and Winter Olympic Games. The blue points indicate the years the country hosted the Olympic Games and the red points indicate the years these countries competed but did not host.
+
+#### Summer Olympic Games
+
+```{r, label = 'summer_olympic_hosts_medal_progression', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
+#| code-fold: true
+
+# Plotting each summer hosts' medal progression
+
+summer_hosts_df <- summer_olympic_games_summary |>
+  filter(country %in% summer_host_country_focus) |>
+  select(c('country_noc', 'year')) |>
+  mutate(host_country = country_noc,
+         host_year = year) |>
+  select(c('host_country', 'host_year')) |>
+  group_by(host_country) |>
+  summarize(host_years = list(host_year))
+
+summer_hosts_df_countries <- summer_hosts_df |>
+  pull(host_country) |>
+  unique()
+
+
+medal_count_summer_hosts <- olympic_medal_tally_history_summer |>
+  filter(country_noc %in% summer_hosts_df_countries) |>
+  left_join(summer_hosts_df, join_by("country_noc" == "host_country")) |>
+  arrange(country_noc, year) |>
+  group_by(country_noc) |>
+  mutate(host = (year %in% host_years[[1]]))
+
+# Information about year of olympics, country, and whether they were the host that year
+
+summer_host_country_cols <- medal_count_summer_hosts |>
+  select(c('year', 'country', 'country_noc', 'host'))
+
+medal_count_summer_hosts |>
+  ggplot(aes(x = year, y = weighted_total)) +
+  geom_point(aes(group = seq_along(year), color = host), size = 2) +
+  geom_line(aes(group = 1)) +
+  facet_wrap(~country) +
+  theme_bw() +
+  labs(title = "Host Countries Medal Count Over Time",
+       subtitle = "Summer Olympics",
+       x = "Year",
+       y = "Weighted Medal Total") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  transition_reveal(year)
+  
+
+
+```
+
+```{r, label = 'summer_olympic_hosts_medal_progression_static', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
+#| code-fold: true
+
+medal_count_summer_hosts |>
+  ggplot(aes(x = year, y = weighted_total)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country) +
+  theme_bw() +
+  labs(title = "Host Countries Medal Count Over Time",
+       subtitle = "Summer Olympics",
+       x = "Year",
+       y = "Weighted Medal Total") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+  
+
+
+```
+
+```{r, echo = FALSE, label = 'summer_olympic_hosts_stats', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+increase_us_percent <- medal_count_summer_hosts |>
+  filter(country_noc == "USA") |>
+  mutate(percent_change = round(((weighted_total - lag(weighted_total)) / lag(weighted_total)) * 100, 2)) |>
+  slice_max(percent_change, n = 1) |>
+  pull(percent_change)
+
+```
+
+From a preliminary observation of each country's time series plots, we observe that the weighted medal count for each country during the host year has consistently increased from the weighted medal count from the Olympic Games prior. This is especially obvious in the 1984 Olympic Games for the US, where the country experienced a significant increase of `{r} increase_us_percent`% in their weighted medal total as compared to the previous year (from 197 to 497).
+
+#### Winter Olympic Games
+
+Now, let's take a look at the Winter Olympic Games and see if there is a similar pattern with host countries increasing their medal counts during host years.
+
+```{r, label = 'winter_olympic_hosts_medal_progression', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
+#| code-fold: true
+
+# Plotting each summer hosts' medal progression
+
+winter_hosts_df <- winter_olympic_games_summary |>
+  filter(country %in% winter_host_country_focus) |>
+  select(c('country_noc', 'year')) |>
+  mutate(host_country = country_noc,
+         host_year = year) |>
+  select(c('host_country', 'host_year')) |>
+  group_by(host_country) |>
+  summarize(host_years = list(host_year))
+
+winter_hosts_df_countries <- winter_hosts_df |>
+  pull(host_country) |>
+  unique()
+
+
+medal_count_winter_hosts <- olympic_medal_tally_history_winter |>
+  filter(country_noc %in% winter_hosts_df_countries) |>
+  left_join(winter_hosts_df, join_by("country_noc" == "host_country")) |>
+  arrange(country_noc, year) |>
+  group_by(country_noc) |>
+  mutate(host = (year %in% host_years[[1]]))
+
+# Information about year of olympics, country, and whether they were the host that year
+
+winter_host_country_cols <- medal_count_winter_hosts |>
+  select(c('year', 'country', 'country_noc', 'host'))
+
+medal_count_winter_hosts |>
+  ggplot(aes(x = year, y = weighted_total)) +
+  geom_point(aes(group = seq_along(year), color = host), size = 2) +
+  geom_line(aes(group = 1)) +
+  facet_wrap(~country) +
+  theme_bw() +
+  labs(title = "Host Countries Medal Count Over Time",
+       subtitle = "Winter Olympics",
+       x = "Year",
+       y = "Weighted Medal Total") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  transition_reveal(year)
+  
+
+
+```
+
+```{r, label = 'winter_olympic_hosts_medal_progression_static', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
+#| code-fold: true
+
+medal_count_winter_hosts |>
+  ggplot(aes(x = year, y = weighted_total)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country) +
+  theme_bw() +
+  labs(title = "Host Countries Medal Count Over Time",
+       subtitle = "Winter Olympics",
+       x = "Year",
+       y = "Weighted Medal Total") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+  
+
+
+```
+
+In majority of these cases, the host country has increased their weighted medal count during host years. There's one exception to this pattern for one of Canada's host years. In 1988, Canada hosted the Winter Olympic Games and only garnered a weighted total medal count of 7 as compared to their previous showing of 9 in 1984. Otherwise, each country has shown some increase in their weighted medal count during host years. One massive increase was for the US in 2000 when they increased their weighted medal count from 28 the previous games to 67, a `{r} round(((67-28)/28) / 100, 2)`% increase.
+
+### Athlete Participation
+
+Next, I would like to take a deeper dive into each of these host countries and analyze their change in athlete participation over time. Typically, host countries have additional athletes representing their country as compared to non-host years.[^1] This is due to the lower qualification standards for the host country athletes as they are guaranteed a spot for each team sport. So, I would like to take a look at the difference in athlete participation over time, specifically, when countries are hosting.
+
+[^1]: https://fivethirtyeight.com/features/is-there-home-field-advantage-at-the-olympics/#:\~:text=On%20average%2C%20there%20are%20175.8,spot%20in%20each%20team%20sport.
+
+#### Summer Olympic Games
+
+# need to mention limitations for athlete data
+
+```{r, label = 'summer_olympics_host_athletes', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+summer_hosts_noc <- olympic_country_profiles |>
+  filter(country %in% summer_host_country_focus) |>
+  pull(noc)
+
+summer_total_athletes_per_country <- summer_olympic_athlete_event_details |>
+  filter(country_noc %in% summer_hosts_noc) |>
+  group_by(year, country_noc, athlete_id) |>
+  summarize(events_competed = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  summarize(total_athletes = n()) |>
+  ungroup()
+
+summer_host_country_cols |>
+  left_join(summer_total_athletes_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = total_athletes)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Total Athletes Competing Over Time",
+       subtitle = "Summer Olympics",
+       x = "Year",
+       y = "Total Athletes") +
+  theme_bw() +
+  scale_color_discrete(name = "Host") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+  
+  
+
+```
+
+```{r, label = 'summer_olympics_host_more_athletes', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Want to check if during host years the number of athletes exceed the totals from immediately before and after the host year
+
+summer_more_athletes_host <- summer_host_country_cols |>
+  left_join(summer_total_athletes_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  mutate(host_more = case_when(
+    host == "TRUE" ~ ((total_athletes > lag(total_athletes)) & (total_athletes > lead(total_athletes))),
+    .default = NA
+  )) |>
+  filter(!is.na(host_more))
+
+summer_total_athletes_per_country_display <- summer_more_athletes_host |>
+  select(c("year", "country", "country_noc", "host_more")) |>
+  arrange(year)
+
+summer_total_athletes_per_country_display |>
+  group_by(host_more) |>
+  summarize(count = n()) |>
+  ungroup() |>
+  mutate(total_olympics = sum(count),
+         percent = round((count / total_olympics) * 100, 2),
+         percent_labels = paste0(percent, "%")) |>
+  ggplot(aes(x="", y = percent, fill = host_more)) +
+    geom_bar(stat = "identity", width = 1) +
+    geom_text(aes(label = percent_labels),
+              position = position_stack(vjust = 0.5)) +
+    coord_polar("y", start = 0) +
+    theme_void() +
+    labs(title = "Total Athlete Distribution for Host Countries During Host Years",
+         subtitle = "Summer Olympics") +
+    scale_fill_discrete(name = "Host Year Total Athletes Greater") +
+    guides(fill = guide_legend(reverse = TRUE))
+
+```
+
+```{r, label = 'summer_athletes_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+DT::datatable(setNames(summer_total_athletes_per_country_display, c("Year", "Country", "Country Code", "Host Year Total Athletes Exceeds Prior and Following Olympics")), 
+              caption = "Table 5: Total Athletes Competing for Host Countries during Host Years",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+
+```
+
+From this analysis, we find that in about 89% of the Summer Olympic Games (of the ones that we are working with), the total amount of athletes that the host country sends exceeds the amount they send in the Olympics immediately preceding and proceeding that year. There was only one case, in 1984, where the US total count of athletes in that year was 577 which exceeded the previous Olympics, but did not exceed the following Olympics where the US sent an additional 6 athletes, sending a total of 583 athletes.
+
+### Event Participation
+
+```{r, label = 'summer_olympics_host_events', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+summer_total_events_per_country <- summer_olympic_athlete_event_details |>
+  filter(country_noc %in% summer_hosts_noc) |>
+  group_by(year, country_noc, event) |>
+  summarize(total_athletes = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  summarize(total_events = n()) |>
+  ungroup()
+
+summer_host_country_cols |>
+  left_join(summer_total_events_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = total_events)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Total Events Competed in Over Time",
+       subtitle = "Summer Olympics",
+       x = "Year",
+       y = "Total Events") +
+  theme_bw() +
+  scale_color_discrete(name = "Host") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+
+```
+
+```{r, label = 'summer_olympics_host_more_events', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Want to check if during host years the number of events exceed the totals from immediately before and after the host year
+
+summer_more_events_host <- summer_host_country_cols |>
+  left_join(summer_total_events_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  mutate(host_more = case_when(
+    host == "TRUE" ~ ((total_events > lag(total_events)) & (total_events > lead(total_events))),
+    .default = NA
+  )) |>
+  filter(!is.na(host_more))
+
+summer_total_events_per_country_display <- summer_more_events_host |>
+  select(c("year", "country", "country_noc", "host_more")) |>
+  arrange(year)
+
+summer_total_events_per_country_display |>
+  group_by(host_more) |>
+  summarize(count = n()) |>
+  ungroup() |>
+  mutate(total_olympics = sum(count),
+         percent = round((count / total_olympics) * 100, 2),
+         percent_labels = paste0(percent, "%")) |>
+  ggplot(aes(x="", y = percent, fill = host_more)) +
+    geom_bar(stat = "identity", width = 1) +
+    geom_text(aes(label = percent_labels),
+              position = position_stack(vjust = 0.5)) +
+    coord_polar("y", start = 0) +
+    theme_void() +
+    labs(title = "Total Events Distribution for Host Countries During Host Years",
+         subtitle = "Summer Olympics") +
+    scale_fill_discrete(name = "Host Year Total Events Greater") +
+    guides(fill = guide_legend(reverse = TRUE))
+
+```
+
+```{r, label = 'summer_events_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+DT::datatable(setNames(summer_total_events_per_country_display, c("Year", "Country", "Country Code", "Host Year Total Events Exceeds Prior and Following Olympics")), 
+              caption = "Table 6: Total Events Competed in for Host Countries during Host Years",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+
+```
+
+#### Winter Olympic Games
+
+```{r, label = 'winter_olympics_host_athletes', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+winter_hosts_noc <- olympic_country_profiles |>
+  filter(country %in% winter_host_country_focus) |>
+  pull(noc)
+
+winter_total_athletes_per_country <- winter_olympic_athlete_event_details |>
+  filter(country_noc %in% winter_hosts_noc) |>
+  group_by(year, country_noc, athlete_id) |>
+  summarize(events_competed = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  summarize(total_athletes = n()) |>
+  ungroup()
+
+winter_host_country_cols |>
+  left_join(winter_total_athletes_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = total_athletes)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Total Athletes Competing Over Time",
+       subtitle = "Winter Olympics",
+       x = "Year",
+       y = "Total Athletes") +
+  theme_bw() +
+  scale_color_discrete(name = "Host") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+  
+  
+
+```
+
+```{r, label = 'winter_olympics_host_more_athletes', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Want to check if during host years the number of athletes exceed the totals from immediately before and after the host year
+
+winter_more_athletes_host <- winter_host_country_cols |>
+  left_join(winter_total_athletes_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  mutate(host_more = case_when(
+    host == "TRUE" ~ ((total_athletes > lag(total_athletes)) & (total_athletes > lead(total_athletes))),
+    .default = NA
+  )) |>
+  filter(!is.na(host_more))
+
+winter_total_athletes_per_country_display <- winter_more_athletes_host |>
+  select(c("year", "country", "country_noc", "host_more")) |>
+  arrange(year)
+
+winter_total_athletes_per_country_display |>
+  group_by(host_more) |>
+  summarize(count = n()) |>
+  ungroup() |>
+  mutate(total_olympics = sum(count),
+         percent = round((count / total_olympics) * 100, 2),
+         percent_labels = paste0(percent, "%")) |>
+  ggplot(aes(x="", y = percent, fill = host_more)) +
+    geom_bar(stat = "identity", width = 1) +
+    geom_text(aes(label = percent_labels),
+              position = position_stack(vjust = 0.5)) +
+    coord_polar("y", start = 0) +
+    theme_void() +
+    labs(title = "Total Athlete Distribution for Host Countries During Host Years",
+         subtitle = "Winter Olympics") +
+    scale_fill_discrete(name = "Host Year Total Athletes Greater") +
+    guides(fill = guide_legend(reverse = TRUE))
+
+```
+
+```{r, label = 'winter_athletes_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+DT::datatable(setNames(winter_total_athletes_per_country_display, c("Year", "Country", "Country Code", "Host Year Total Athletes Exceeds Prior and Following Olympics")), 
+              caption = "Table 7: Total Athletes Competing for Host Countries during Host Years",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+
+```
+
+```{r, label = 'winter_olympics_host_events', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+winter_total_events_per_country <- winter_olympic_athlete_event_details |>
+  filter(country_noc %in% winter_hosts_noc) |>
+  group_by(year, country_noc, event) |>
+  summarize(total_athletes = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  summarize(total_events = n()) |>
+  ungroup()
+
+winter_host_country_cols |>
+  left_join(winter_total_events_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = total_events)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Total Events Competed in Over Time",
+       subtitle = "Winter Olympics",
+       x = "Year",
+       y = "Total Events") +
+  theme_bw() +
+  scale_color_discrete(name = "Host") +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+  
+
+```
+
+```{r, label = 'winter_olympics_host_more_events', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Want to check if during host years the number of events exceed the totals from immediately before and after the host year
+
+winter_more_events_host <- winter_host_country_cols |>
+  left_join(winter_total_events_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  mutate(host_more = case_when(
+    host == "TRUE" ~ ((total_events > lag(total_events)) & (total_events > lead(total_events))),
+    .default = NA
+  )) |>
+  filter(!is.na(host_more))
+
+winter_total_events_per_country_display <- winter_more_events_host |>
+  select(c("year", "country", "country_noc", "host_more")) |>
+  arrange(year)
+
+winter_total_events_per_country_display |>
+  group_by(host_more) |>
+  summarize(count = n()) |>
+  ungroup() |>
+  mutate(total_olympics = sum(count),
+         percent = round((count / total_olympics) * 100, 2),
+         percent_labels = paste0(percent, "%")) |>
+  ggplot(aes(x="", y = percent, fill = host_more)) +
+    geom_bar(stat = "identity", width = 1) +
+    geom_text(aes(label = percent_labels),
+              position = position_stack(vjust = 0.5)) +
+    coord_polar("y", start = 0) +
+    theme_void() +
+    labs(title = "Total Events Distribution for Host Countries During Host Years",
+         subtitle = "Winter Olympics") +
+    scale_fill_discrete(name = "Host Year Total Events Greater") +
+    guides(fill = guide_legend(reverse = TRUE))
+
+```
+
+```{r, label = 'winter_events_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+DT::datatable(setNames(winter_total_events_per_country_display, c("Year", "Country", "Country Code", "Host Year Total Events Exceeds Prior and Following Olympics")), 
+              caption = "Table 8: Total Events Competed in for Host Countries during Host Years",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+
+```
+
+### Proportion of Medals Won versus Total Events Participated In
+
+#### Summer Olympics
+
+```{r, label = 'summer_olympics_win_prop', message = FALSE, warning = FALSE, fig.dim = c(10,8)}
+#| code-fold: true
+
+summer_prop_won_per_country <- summer_olympic_athlete_event_details |>
+  filter(country_noc %in% summer_hosts_noc) |>
+  group_by(year, country_noc, event, medal) |>
+  summarize(athletes_competed = n()) |>
+  ungroup() |>
+  group_by(year, country_noc, medal) |>
+  summarize(total_events = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  mutate(total = sum(total_events)) |>
+  ungroup() |>
+  filter(!is.na(medal)) |>
+  group_by(year, country_noc, total) |>
+  summarize(total_won = sum(total_events),
+            percent_won = round((total_won / total) * 100, 2)) |>
+  ungroup() |>
+  unique() |>
+  arrange(country_noc, year)
+
+# Manually add the Paris 2024 data
+
+paris_olympics_medal_count <- medal_count_summer_hosts |>
+  filter(year == 2024) |>
+  select(c("country_noc", "year", "total"))
+  
+paris_olympics_prop <- summer_total_events_per_country |>
+  filter(year == 2024) |> 
+  inner_join(paris_olympics_medal_count, join_by("country_noc" == "country_noc", "year" == "year")) |>
+  rename(total_won = "total",
+         total = "total_events") |>
+  mutate(percent_won = round((total_won / total) * 100, 2))
+  
+# Binding data frames together
+
+summer_prop_won_per_country <- rbind(summer_prop_won_per_country, paris_olympics_prop)
+
+summer_host_country_cols |>
+  left_join(summer_prop_won_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = percent_won)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Distribution of Percentage of Events Won Over Time",
+       subtitle = "Summer Olympics",
+       x = "Year",
+       y = "Percentage of Events Won") +
+  theme_bw() +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+
+
+```
+
+#### Winter Olympics
+
+```{r, label = 'winter_olympics_win_prop', message = FALSE, warning = FALSE, fig.dim = c(10,8)}
+#| code-fold: true
+
+winter_prop_won_per_country <- winter_olympic_athlete_event_details |>
+  filter(country_noc %in% winter_hosts_noc) |>
+  group_by(year, country_noc, event, medal) |>
+  summarize(athletes_competed = n()) |>
+  ungroup() |>
+  group_by(year, country_noc, medal) |>
+  summarize(total_events = n()) |>
+  ungroup() |>
+  group_by(year, country_noc) |>
+  mutate(total = sum(total_events)) |>
+  ungroup() |>
+  filter(!is.na(medal)) |>
+  group_by(year, country_noc, total) |>
+  summarize(total_won = sum(total_events),
+            percent_won = round((total_won / total) * 100, 2)) |>
+  ungroup() |>
+  unique() |>
+  arrange(country_noc, year)
+
+winter_host_country_cols |>
+  left_join(winter_prop_won_per_country, join_by("year" == "year", "country_noc" == "country_noc")) |>
+  arrange(country_noc, year) |>
+  ggplot(aes(x = year, y = percent_won)) +
+  geom_point(aes(color = host), size = 2) +
+  geom_line() +
+  facet_wrap(~country_noc) +
+  labs(title = "Distribution of Percentage of Events Won Over Time",
+       subtitle = "Winter Olympics",
+       x = "Year",
+       y = "Percentage of Events Won") +
+  theme_bw() +
+  scale_color_manual(name = "Host Country",
+                     values = c("FALSE" = "#F8766D", "TRUE" = "#619CFF"),
+                     labels = c("No", "Yes")) +
+  guides(color = guide_legend(reverse = TRUE))
+
+
+```
+
+## Statistical Modeling
+
+```{r, label = 'data_cleaning', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+library(tidymodels)  
+library(readr)       # for importing data
+library(vip)         # for variable importance plots
+
+# Create a master data frame containing variables: total medal count, country, season, host, year
+
+all_hosts <- olympic_games_summary |>
+  select(c('country_noc', 'year')) |>
+  mutate(host_country = country_noc,
+         host_year = year) |>
+  select(c('host_country', 'host_year')) |>
+  group_by(host_country) |>
+  summarize(host_years = list(host_year))
+
+hosts_df_countries <- all_hosts |>
+  pull(host_country) |>
+  unique()
+
+
+medal_count_with_hosts <- olympic_medal_tally_history |>
+  left_join(all_hosts, join_by("country_noc" == "host_country")) |>
+  arrange(country_noc, year) |>
+  group_by(country_noc) |>
+  mutate(host = (year %in% host_years[[1]])) |>
+  ungroup() |>
+  select(c('year', 'country_noc', 'weighted_total', 'season', 'host')) |>
+  drop_na() |>
+  mutate(host = as.factor(host),
+         season = as.factor(season))
+
+
+```
+
+### Logistic Regression
+
+```{r, label = 'logistic_regression_model', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+lr_new <- logistic_reg()
+lr_fit <- fit(lr_new, host ~ ., data = medal_count_with_hosts)
+lr_summary <- tidy(lr_fit)
+
+lr_summary
+
+```
+
+```{r}
+
+lr_summary_trunc <- lr_summary |>
+  filter(term %in% c("year", "country_nocAHO", "country_nocUSA", "weighted_total", "seasonwinter")) |>
+  mutate(estimate = round(estimate, 5),
+         std.error = round(std.error, 5),
+         statistic = round(statistic, 5),
+         p.value = round(p.value, 5))
+
+DT::datatable(setNames(lr_summary_trunc, c("Term", "Coefficient Estimate", "Standard Error", "Test Statistic", "P-Value")), 
+              caption = "Logistic Regression Summary",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+```{r, echo = FALSE, label = 'logistic_regression_model_statistics', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+model_coefficient <- lr_summary |>
+  filter(term == "weighted_total") |>
+  pull(estimate)
+
+model_p_value <- lr_summary |>
+  filter(term == "weighted_total") |>
+  pull(p.value)
+
+print(model_coefficient)
+print(model_p_value)
+
+```
+
+Based on our logistic regression model, we found that our coefficient for our "weighted_medals" variable was `{r} model_coefficient`, a positive value, which indicates that country's are typically winning more medals during host years. Additionally, given that we inputted over 150 variables into our model and weighted_total still remains among the most significant variables with a p-value of `{r} model_p_value`, indicates its statistical significant effect. In other words, the weighted_total is very helpful in predicting whether or not a country was the host.
+
+### Random Forest
+
+```{r, label = 'random_forest', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+set.seed(100)
+
+splits <- initial_split(medal_count_with_hosts, strata = host)
+
+# Non-Test
+
+olympic_other <- training(splits)
+
+# Test
+
+olympic_test <- testing(splits)
+
+set.seed(200)
+
+val_set <- validation_split(olympic_other,
+                            strata = host,
+                            prop = 0.80)
+
+```
+
+```{r, label = 'rf_cores', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+cores <- parallel::detectCores()
+
+```
+
+```{r, label = 'rf_model', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+rf_mod <- rand_forest(mtry = tune(), min_n = tune(), trees = 1000) |> 
+  set_engine("ranger", num.threads = cores) |>
+  set_mode("classification")
+
+```
+
+```{r, label = 'rf_recipe', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+rf_recipe <- recipe(host ~ ., data = olympic_other)
+
+```
+
+```{r, label = 'rf_workflow', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+rf_workflow <- workflow() |> 
+  add_model(rf_mod) |> 
+  add_recipe(rf_recipe)
+
+```
+
+```{r, label = 'rf_res', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+set.seed(300)
+
+rf_res <- rf_workflow |>
+  tune_grid(val_set,
+            grid = 25,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+
+
+```
+
+```{r}
+
+rf_best <- rf_res |>
+  select_best(metric = "roc_auc")
+
+rf_mtry <- rf_best$mtry
+rf_min_n <- rf_best$min_n
+
+```
+
+```{r}
+
+rf_auc <- rf_res |> 
+  collect_predictions(parameters = rf_best) |> 
+  roc_curve(host, .pred_FALSE) |> 
+  mutate(model = "Random Forest")
+
+```
+
+```{r}
+
+rf_auc |>
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) + 
+  geom_path(lwd = 1.5, alpha = 0.8) +
+  geom_abline(lty = 3) + 
+  coord_equal() + 
+  scale_color_viridis_d(option = "plasma", end = .6)
+
+```
+
+```{r}
+
+# the last model
+last_rf_mod <- rand_forest(mtry = rf_mtry, min_n = rf_min_n, trees = 1000) |> 
+  set_engine("ranger", num.threads = cores, importance = "impurity") |> 
+  set_mode("classification")
+
+# the last workflow
+last_rf_workflow <- 
+  rf_workflow |> 
+  update_model(last_rf_mod)
+
+# the last fit
+set.seed(300)
+
+last_rf_fit <- last_rf_workflow |> 
+  last_fit(splits)
+
+last_rf_fit
+
+
+
+```
+
+```{r}
+
+last_rf_fit |>
+  collect_metrics()
+
+```
+
+```{r}
+
+last_rf_fit |>
+  extract_fit_parsnip() |>
+  vip(num_features = 5)
+
+```
+
+```{r}
+
+last_rf_fit |> 
+  collect_predictions() |> 
+  roc_curve(host, .pred_FALSE) |> 
+  autoplot()
+
+```
+
+### Time Series Analysis
+
+Synthetic control to measure effect: for each host nation, take its medal counts in all years before it hosts and build a time series model to estimate how it “should” do. Then compare to how it actually did and that’s an estimate of the causal effect of hosting. If this quantity is consistently positive, you have good evidence for a “host effect.”
+
+Will skip the host from 1952 since we start our data from 1950s onwards
+
+```{r}
+
+library(fable)
+library(tsibble)
+library(feasts)
+library(urca)
+
+```
+
+#### Summer
+
+```{r}
+
+hosts_countries_summer <- olympic_games_summary |>
+  mutate(season = case_when(
+    str_detect(edition, "Summer") ~ "summer",
+    str_detect(edition, "Winter") ~ "winter")) |>
+  filter(season == "summer") |>
+  select(c('country_noc', 'year')) |>
+  filter(year >= 1950 & year <= 2020) |>
+  mutate(host_country = country_noc,
+         host_year = year) |>
+  select(c('host_country', 'host_year'))
+
+num_host_summer <- hosts_countries_summer |>
+  pull(host_country) |>
+  length()
+
+```
+
+```{r}
+
+# Create data frame to compare time series predictions to actual medal counts
+# Cannot use the hosts that don't have consistent data for each Olympics
+
+col_names_summer <- c("year", "host country", "forecasted", "actual", "difference")
+
+time_series_summer_olympics <- data.frame(matrix(nrow = 0, ncol = length(col_names_summer)))
+
+no_projection_summer <- character()
+
+for (i in 1:num_host_summer) {
+  hosts_countries_summer_name <- hosts_countries_summer$host_country
+  hosts_countries_summer_year <- hosts_countries_summer$host_year
+
+  host_year_medal_count <- medal_count_with_hosts |>
+    filter(country_noc %in% hosts_countries_summer_name[[i]]) |>
+    filter(season == "summer") |>
+    filter(year == hosts_countries_summer_year[[i]]) |>
+    pull(weighted_total)
+
+  before_host_year_df <- medal_count_with_hosts |>
+    filter(country_noc %in% hosts_countries_summer_name[[i]]) |>
+    filter(season == "summer") |>
+    filter(year < hosts_countries_summer_year[[i]]) |>
+    select(c("year", "weighted_total"))
+  
+  # Filter out countries that only have one row of historical data
+  
+  if (nrow(before_host_year_df) > 1) {
+    country_ts <- as_tsibble(before_host_year_df, index = year)
+    
+    country_ts <- country_ts |>
+      fill_gaps()
+    
+    fit <- country_ts |>
+      model(arima = ARIMA((weighted_total)))
+  
+    country_forecast <- fit |>
+      forecast(h = "4 years")
+    
+    projection <- round(country_forecast$.mean, 0)
+    
+    # Filtering out the host countries that we cannot project (either not enough back dated data or gaps within data)
+    
+    if (!is.na(projection)) {
+      
+      time_series_summer_olympics <- rbind(time_series_summer_olympics, c(hosts_countries_summer_year[[i]], hosts_countries_summer_name[[i]], projection, host_year_medal_count, host_year_medal_count - projection))
+      
+    } else {
+      no_projection_summer <- c(no_projection_summer, hosts_countries_summer_name[[i]])
+    }
+    
+  } else {
+    no_projection_summer <- c(no_projection_summer, hosts_countries_summer_name[[i]])
+  }
+  
+}
+
+colnames(time_series_summer_olympics) = col_names_summer
+
+time_series_summer_olympics <- time_series_summer_olympics |>
+  mutate(forecasted = as.numeric(forecasted),
+         actual = as.numeric(actual))
+
+```
+
+```{r}
+
+DT::datatable(setNames(time_series_summer_olympics, c("Year", "Host Country", "Time Series Forecast", "Actual Weighted Medal Count", "Difference in Count")), 
+              caption = "Table ???: ????????",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+```{r}
+
+time_series_summer_olympics |>
+  mutate(positive = case_when(
+    difference > 0 ~ TRUE,
+    .default = FALSE
+  )) |>
+  ggplot(aes(x = forecasted, y = actual)) +
+  geom_point(aes(color = factor(positive, levels = c("TRUE", "FALSE"))), size = 2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") + # If forecasted weighted medal count = actual weighted medal count
+  labs(title = "ARIMA Time Series Projection vs Actual Weighted Medal Counts for Host Countries",
+       subtitle = "Summer Olympics",
+       x = "Projected Weighted Medal Count",
+       y = "Actual Weighted Medal Count") +
+  scale_color_manual(name = "Which is Greater?",
+                     values = c("TRUE" = "#4CBB17", "FALSE" = "red"),
+                     labels = c("Actual", "Projection")) +
+  theme_bw()
+```
+
+#### Winter
+
+```{r}
+
+hosts_countries_winter <- olympic_games_summary |>
+  mutate(season = case_when(
+    str_detect(edition, "Summer") ~ "summer",
+    str_detect(edition, "Winter") ~ "winter")) |>
+  filter(season == "winter") |>
+  select(c('country_noc', 'year')) |>
+  filter(year >= 1950 & year <= 2020) |>
+  mutate(host_country = country_noc,
+         host_year = year) |>
+  select(c('host_country', 'host_year'))
+
+num_host_winter <- hosts_countries_winter |>
+  pull(host_country) |>
+  length()
+
+```
+
+```{r}
+
+# Create data frame to compare time series predictions to actual medal counts
+# Cannot use the hosts that don't have consistent data for each Olympics
+
+col_names_winter <- c("year", "host country", "forecasted", "actual", "difference")
+
+time_series_winter_olympics <- data.frame(matrix(nrow = 0, ncol = length(col_names_winter)))
+
+no_projection_winter <- character()
+
+for (i in 1:num_host_winter) {
+  hosts_countries_winter_name <- hosts_countries_winter$host_country
+  hosts_countries_winter_year <- hosts_countries_winter$host_year
+
+  host_year_medal_count <- medal_count_with_hosts |>
+    filter(country_noc %in% hosts_countries_winter_name[[i]]) |>
+    filter(season == "winter") |>
+    filter(year == hosts_countries_winter_year[[i]]) |>
+    pull(weighted_total)
+
+  before_host_year_df <- medal_count_with_hosts |>
+    filter(country_noc %in% hosts_countries_winter_name[[i]]) |>
+    filter(season == "winter") |>
+    filter(year < hosts_countries_winter_year[[i]]) |>
+    select(c("year", "weighted_total"))
+  
+  # Filter out countries that only have one row of historical data
+  
+  if (nrow(before_host_year_df) > 1) {
+    country_ts <- as_tsibble(before_host_year_df, index = year)
+    
+    country_ts <- country_ts |>
+      fill_gaps()
+    
+    fit <- country_ts |>
+      model(arima = ARIMA((weighted_total)))
+  
+    country_forecast <- fit |>
+      forecast(h = "4 years")
+    
+    # Abnormal Winter Olympics in 1992 then 1994, will need to include an adjustment to correct the output of the forecasting for the host of 1998 Olympics
+    
+    if (nrow(country_forecast) > 1) {
+      
+      # We will just take the first projection
+      
+      country_forecast <- country_forecast |>
+        slice_head(n = 1)
+      
+    }
+    
+    projection <- round(country_forecast$.mean, 0)
+    
+    # Filtering out the host countries that we cannot project (either not enough back dated data or gaps within data)
+    
+    if (!is.na(projection)) {
+      
+      time_series_winter_olympics <- rbind(time_series_winter_olympics, c(hosts_countries_winter_year[[i]], hosts_countries_winter_name[[i]], projection, host_year_medal_count, host_year_medal_count - projection))
+      
+    } else {
+      no_projection_winter <- c(no_projection_winter, hosts_countries_winter_name[[i]])
+    }
+    
+  } else {
+    no_projection_winter <- c(no_projection_winter, hosts_countries_winter_name[[i]])
+  }
+  
+}
+
+colnames(time_series_winter_olympics) = col_names_winter
+
+time_series_winter_olympics <- time_series_winter_olympics |>
+  mutate(forecasted = as.numeric(forecasted),
+         actual = as.numeric(actual))
+
+```
+
+```{r}
+
+DT::datatable(setNames(time_series_winter_olympics, c("Year", "Host Country", "Time Series Forecast", "Actual Weighted Medal Count", "Difference in Count")), 
+              caption = "Table ???: ????????",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+```{r}
+
+time_series_winter_olympics |>
+  mutate(positive = case_when(
+    difference > 0 ~ TRUE,
+    .default = FALSE
+  )) |>
+  ggplot(aes(x = forecasted, y = actual)) +
+  geom_point(aes(color = factor(positive, levels = c("TRUE", "FALSE"))), size = 2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") + # If forecasted weighted medal count = actual weighted medal count
+  labs(title = "ARIMA Time Series Projection vs Actual Weighted Medal Counts for Host Countries",
+       subtitle = "Winter Olympics",
+       x = "Projected Weighted Medal Count",
+       y = "Actual Weighted Medal Count") +
+  scale_color_manual(name = "Which is Greater?",
+                     values = c("TRUE" = "#4CBB17", "FALSE" = "red"),
+                     labels = c("Actual", "Projection")) +
+  theme_bw()
+```
