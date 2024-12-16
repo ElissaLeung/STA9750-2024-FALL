@@ -38,6 +38,7 @@ if(!require("gridExtra")) install.packages("gridExtra")
 if(!require("httr2")) install.packages("httr2")
 if(!require("readxl")) install.packages("readxl")
 if(!require("ggcorrplot")) install.packages("ggcorrplot")
+if(!require("leaflet")) install.packages("leaflet")
 
 # Load packages into R
 
@@ -57,9 +58,10 @@ library(gridExtra) # labels outside the plot
 library(httr2)
 library(readxl) # reading excel files
 library(ggcorrplot) # correlation matrices
+library(leaflet)
+
 
 ```
-
 
 ### 126 Years of Olympic Data (1896-2022)
 
@@ -134,7 +136,6 @@ olympic_medal_tally_history <- rbind(olympic_medal_tally_history, paris_medals_t
 
 
 ```
-
 
 ```{r, label = 'combine_athlete_datasets', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -264,7 +265,6 @@ olympic_athlete_event_details <- rbind(olympic_athlete_event_details, paris_athl
 
 ```
 
-
 ```{r, label = '1950-2022', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -330,7 +330,6 @@ winter_olympic_athlete_event_details <- olympic_athlete_event_details |>
 
 ```
 
-
 ```{r, label = 'weighted_medal_counts', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -346,8 +345,6 @@ olympic_medal_tally_history_winter <- olympic_medal_tally_history |>
   filter(season == "winter")
 
 ```
-
-
 
 ```{r, label = 'summer_olympic_medals_all_time', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -634,14 +631,66 @@ Taking a preliminary analysis at our data and which countries lead in total meda
 
 ## Host Analysis
 
+```{r, label = 'host_location_data', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+# Latitude and Longitude for each host city
+
+city_coord <- read_csv("olympic_cities.csv") |>
+  select(c("Olympic_year", "Olympic_season", "ISO_code_mapping", "Latitude", "Longitude"))
+
+# Joining tables to include Olympic host information with location data
+
+olympic_games_summary_coord <- inner_join(olympic_games_summary, city_coord, join_by("year" == "Olympic_year", "season" == "Olympic_season")) |>
+  arrange(year) |>
+  filter(!(country_noc == "AUS" & `ISO_code_mapping` == "SWE")) |>
+  select(-c("ISO_code_mapping"))
+
+# Summarizing host country information for each Olympic Game
+
+olympic_games_summary_city <- olympic_games_summary_coord |>
+  mutate(season = case_when(
+    city == "Beijing" ~ "both",
+    .default = season
+  )) |>
+  group_by(city, country, season, `Latitude`, `Longitude`) |>
+  summarize(total_hosted = n(),
+            host_years = as.character(list(edition))) |>
+  ungroup() |>
+  drop_na() |>
+  mutate(popup_info = case_when(
+    substr(host_years, 1, 1) == "c" ~ paste(city, ", ", country, " hosted the ", "<br/>", substr(host_years, 4, 23), " and <br/> the ", substr(host_years, 28, 47)),
+    .default = paste(city, ", ", country, " hosted the ", host_years)))
+
+
+
+```
+
+```{r, label = 'host_interactive_map', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+pal <- colorFactor(c("purple", "red", "blue"), domain = c("both", "summer", "winter"))
+
+
+leaflet() |>
+  addTiles() |>
+  addCircleMarkers(data = olympic_games_summary_city, 
+                   lat = ~`Latitude`, 
+                   lng = ~`Longitude`, 
+                   radius = ~ifelse(total_hosted == 1, 2, 5),
+                   popup = ~popup_info,
+                   color = ~pal(season))
+
+
+
+```
+
 ### Total Games Hosted
 
 #### Summer Olympic Hosts
 
 ```{r, label = 'summer_host_summary_data_table', message = FALSE, warning = FALSE}
 #| code-fold: true
-
-# Plots showing the number of Olympics hosted per country
 
 summer_olympic_games_summary_host <- summer_olympic_games_summary |>
   group_by(country, country_noc) |>
@@ -1455,12 +1504,15 @@ val_set <- validation_split(olympic_other,
                             strata = host,
                             prop = 0.80)
 
+cores <- parallel::detectCores()
+
+
 ```
 
 ```{r, label = 'rf_cores', message = FALSE, warning = FALSE}
 #| code-fold: true
 
-cores <- parallel::detectCores()
+
 
 ```
 
