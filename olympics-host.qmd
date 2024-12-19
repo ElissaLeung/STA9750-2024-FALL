@@ -1512,3 +1512,14 @@ Overall, in 92% of cases, the actual weighted totals exceeded the ARIMA projecti
 From the beginning of our analysis, we found a general visual trend that host countries typically sent more athletes and performed better during their host years. Through some additional statistical modeling, we found clearer evidence of a positive correlation and association between hosting status and weighted total medal counts.
 
 This analysis has some limitations, such as unaccounted variables within each host country that may also influence Olympic success (e.g., economic stability, athlete participation, athletic investment, etc.). Nevertheless, our analysis on the correlation between hosting the Olympics and more medal success cannot be ignored.
+
+
+To further explore other factors influencing a country’s Olympic success, I encourage you to check out the work of my group members:
+
+* [The Economics of the Olympics](https://aaronkcooper.github.io/STA9750-2024-FALL/olympic_economics.html) by Aaron Cooper
+* [Geographic Characteristics on Olympic Performance](https://cliu98.github.io/STA9750-2024-FALL/individual_report.html) by Chris Liu
+* [Olympics by Culture and Spending](https://will-peters.github.io/STA9750-2024-FALL/Olympic_Spend.html) by Will Peters
+
+For a deeper understanding of a country's Olympic success, take a look at our full group report answering the question “What makes a country succeed in the Olympics?” here:
+[The Olympic Advantage](https://elissaleung.github.io/STA9750-2024-FALL/olympic-advantage.html).
+

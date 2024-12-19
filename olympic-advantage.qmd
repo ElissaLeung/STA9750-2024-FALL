@@ -157,11 +157,12 @@ Lastly, we looked at the “host country advantage”, answering the question �
 
 To expand our host country analysis, we used a supplemental 2024 Paris Olympics Kaggle data source. Similar to our main data set, this source includes extensive and unbiased information (e.g. athletes, events, medal counts) from the most recent Summer Olympics.
 
-From a preliminary look at the historical weighted medal counts for each host country over time, we find that there is a general pattern of host countries earning a higher weighted medal count during their host year. However, to determine the existence of an advantage we also performed some statistical modeling.
+From a preliminary look at the historical weighted medal counts for each host country over time, we find that there is a general pattern of host countries earning a higher weighted medal count during their host year.
 
 ![](host_medal_count_summer_1.png)
 
 ![](host_medal_count_winter_2.png)
+However, to determine the existence of an advantage we also performed some statistical modeling.
 
 From our classification models predicting host status using weighted total medal count, year, country, and Olympic season, we found the weighted total medal counts variable scored the highest in importance. This indicates that there is a strong association between a higher weighted medal performance and hosting the Olympics, even after considering other variables like year, country, and season.
 
