@@ -75,11 +75,10 @@ library(urca)
 
 We will be using a public data source from Kaggle, the [126 Years of Historical Olympic Dataset](https://www.kaggle.com/datasets/muhammadehsan02/126-years-of-historical-olympic-dataset) from [Muhammad Ehsan](https://www.kaggle.com/muhammadehsan02). This collection of datasets contains extensive and unbiased Olympic data from the 1892 Olympic Games in Athens, Greece until the 2022 Winter Olympic Games in Beijing, China. We will only need the following data sets:
 
-* **Olympic Athlete Event Details**: Olympic event results for athletes (e.g. name, sport).
-* **Olympic Country Profiles**: Country National Olympic Committee (NOC) codes.
-* **Olympic Games Summary**: Summary of Olympic Games (e.g. host country, year).
-* **Olympic Medal Tally History**: Historical record of country Olympic medal distributions (gold, silver, bronze).
-
+-   **Olympic Athlete Event Details**: Olympic event results for athletes (e.g. name, sport).
+-   **Olympic Country Profiles**: Country National Olympic Committee (NOC) codes.
+-   **Olympic Games Summary**: Summary of Olympic Games (e.g. host country, year).
+-   **Olympic Medal Tally History**: Historical record of country Olympic medal distributions (gold, silver, bronze).
 
 ```{r, label = 'import_master_datasets', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -97,10 +96,9 @@ olympic_medal_tally_history <- read_csv("Olympic_Medal_Tally_History.csv") # use
 ### Paris 2024 Summer Olympics Data
 
 We would also like to include the 2024 Summer Olympic Games hosted in Paris, France, by using another Kaggle dataset, the [Paris 2024 Olympic Summer Games](https://www.kaggle.com/datasets/piterfm/paris-2024-olympic-summer-games?select=events.csv) compiled by [Petro](https://www.kaggle.com/piterfm). This collection of Paris Olympics data is also an unbiased and extensive overview of the most recent Olympics. We will only need the following data sets:
-    
-* **Athletes**: 2024 Paris Summer Olympics athlete information (e.g. name, country, sport).
-* **Medals Total**: Complete country medal counts for 2024 Paris Summer Olympics.
 
+-   **Athletes**: 2024 Paris Summer Olympics athlete information (e.g. name, country, sport).
+-   **Medals Total**: Complete country medal counts for 2024 Paris Summer Olympics.
 
 ```{r, label = 'import_paris_datasets', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -114,7 +112,7 @@ paris_athletes_original <- read_csv("athletes.csv") # used for total athletes in
 
 ## Data Cleaning
 
-Before proceeding with analysis, to prevent any future difficulties we will need to bind our historical datasets with our Paris datasets. 
+Before proceeding with analysis, to prevent any future difficulties we will need to bind our historical datasets with our Paris datasets.
 
 Below we bind the `olympic_medal_tally_history` data table with the `paris_medals_total` data, adjusting country names and column names accordingly.
 
@@ -356,22 +354,22 @@ winter_olympic_athlete_event_details <- olympic_athlete_event_details |>
 
 ```
 
-As a unique aspect to our analysis, we will use a weighted total medal count metric, where the better the medal, the more weight it carries in the final total. 
+As a unique aspect to our analysis, we will use a weighted total medal count metric, where the better the medal, the more weight it carries in the final total.
 
-* **Gold Medals**: 3
-* **Silver Medals**: 2
-* **Bronze Medals**: 1
+-   **Gold Medals**: 3
+-   **Silver Medals**: 2
+-   **Bronze Medals**: 1
 
 $$
 total_w = (gold * 3) + (silver * 2) + (bronze * 1)
 $$
 
 Where,
-    
-* total~w~: weighted total
-* gold: total golds
-* silver: total silvers
-* bronze: total bronzes
+
+-   total~w~: weighted total
+-   gold: total golds
+-   silver: total silvers
+-   bronze: total bronzes
 
 Next, we’ll proceed with preliminary host country analysis of our Olympic data sets.
 
@@ -434,43 +432,65 @@ olympic_games_summary_city <- olympic_games_summary_coord |>
 
 The interactive map below shows the cities that have hosted the Olympics. By clicking each of the points, we’ll be able to see the year(s) each city hosted.
 
-::: callout-tip
-### Interactive Map Key
-
-#### Colors:
-    
-* **Blue**: Winter Olympic Hosts
-* **Red**: Summer Olympic Hosts
-* **Purple**: Hosted Both
-
-#### Size:
-    
-* **Smaller**: Less Hosted
-* **Bigger**: More Hosted
-:::
-
 ```{r, label = 'host_interactive_map', message = FALSE, warning = FALSE}
 #| code-fold: true
 
-pal <- colorFactor(c("purple", "red", "blue"), domain = c("both", "summer", "winter"))
+library(leaflegend)
 
+pal <- colorFactor(c("purple", "red", "blue"), domain = c("Both", "Summer", "Winter"))
 
+# olympic_games_summary_city |>
+#   rename(Season = "season") |>
+#   mutate(Season = case_when(
+#     Season == "summer" ~ "Summer",
+#     Season == "winter" ~ "Winter",
+#     .default = "Both"
+#   )) |>
+#   leaflet() |>
+#   addTiles() |>
+#   addCircleMarkers(lat = ~`Latitude`, 
+#                    lng = ~`Longitude`, 
+#                    radius = ~ifelse(total_hosted == 1, 2, 5),
+#                    popup = ~popup_info,
+#                    color = ~pal(Season)) |>
+#   addLegend(pal = pal, values = ~Season, group = "circles", position = "topright")
+#   addLegendSize(values = total_hosted, color = ~pal(Season), fillcolor = ~pal(Season))
+
+olympic_games_summary_city |>
+  rename(Season = "season") |>
+  mutate(Season = case_when(
+    Season == "summer" ~ "Summer",
+    Season == "winter" ~ "Winter",
+    .default = "Both"
+  )) |>
 leaflet() |>
   addTiles() |>
-  addCircleMarkers(data = olympic_games_summary_city, 
-                   lat = ~`Latitude`, 
-                   lng = ~`Longitude`, 
-                   radius = ~ifelse(total_hosted == 1, 2, 5),
-                   popup = ~popup_info,
-                   color = ~pal(season))
-
-
+  addSymbolsSize(values = ~total_hosted,
+                 lat = ~`Latitude`, 
+                 lng = ~`Longitude`,
+                 shape = 'circle',
+                 color = 'black',
+                 fillColor = ~pal(Season),
+                 opacity = .5,
+                 baseSize = 10,
+                 popup = ~popup_info) |>
+  addLegendSize(
+    values = olympic_games_summary_city$total_hosted,
+    color = 'black',
+    title = 'Olympics Hosted',
+    shape = 'circle',
+    orientation = 'horizontal',
+    opacity = .5,
+    fillOpacity = 0,
+    breaks = 1,
+    position = 'bottomright') |>
+  addLegend(pal = pal, values = ~Season, position = "bottomright")
 
 ```
 
-From this map, we can observe that Innsbruck, Austria, Tokyo, Japan and Beijing, China are the only three cities to have hosted the Olympics twice. Innsbruck has hosted the Winter Olympics twice, while Tokyo has hosted the Summer Olympics twice. Beijing is the only city to have hosted the Winter Olympics and Summer Olympics.
+From this map, we can observe that Innsbruck, Austria, Tokyo, Japan and Beijing, China are the only three cities to have hosted the Olympics twice (within the 1950-Present period). Innsbruck has hosted the Winter Olympics twice, while Tokyo has hosted the Summer Olympics twice. Beijing is the only city to have hosted the Winter Olympics and Summer Olympics.
 
-Shifting our focus from host cities to host countries, below is an overview of the distribution of Olympic Games hosted by countries for the Summer and Winter Olympics. Since 1950, we find that Australia, Japan, and the United States have hosted the most Summer Olympics with two each. 
+Shifting our focus from host cities to host countries, below is an overview of the distribution of Olympic Games hosted by countries for the Summer and Winter Olympics. Since 1950, we find that Australia, Japan, and the United States have hosted the most Summer Olympics with two each.
 
 ```{r, label = 'summer_host_summary_data_table', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -500,6 +520,7 @@ summer_olympic_games_summary_host |>
        y = "Host Count") +
   theme_bw()
 ```
+
 ```{r, echo = FALSE, label = 'us_winter_host_years', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -551,7 +572,7 @@ Next, we’ll look at the medal progression for host countries over time, to det
 
 #### Summer Olympics
 
-From a preliminary observation of each country's medal progressions, the weighted medal count for each country during the host year has mostly increased from the weighted medal count from the Olympic Games prior. 
+From a preliminary observation of each country's medal progressions, the weighted medal count for each country during the host year has mostly increased from the weighted medal count from the Olympic Games prior.
 
 ```{r, label = 'summer_olympic_hosts_medal_progression', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
 #| code-fold: true
@@ -603,7 +624,6 @@ animate(summer_host_animate, duration = 20, end_pause = 30)
 
 ```
 
-
 ```{r, echo = FALSE, label = 'summer_olympic_hosts_stats', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -620,7 +640,6 @@ This is especially obvious in the 1984 Olympic Games for the US, where the count
 #### Winter Olympics
 
 For the Winter Olympics, the host country usually increased their weighted medal count during host years. One exception to this pattern was in 1988, Canada hosted and earned a weighted total of 7 as compared to their previous showing of 9, both quite low. Otherwise, each country has shown an increase in their weighted totals during host years. One massive increase was for the US in 2000 when they increased their weighted medal count by `{r} round(((67-28)/28) * 100, 2)`%.
-
 
 ```{r, label = 'winter_olympic_hosts_medal_progression', message = FALSE, warning = FALSE, fig.dim = c(10, 8)}
 #| code-fold: true
@@ -671,7 +690,8 @@ winter_host_animate <- medal_count_winter_hosts |>
 animate(winter_host_animate, duration = 20, end_pause = 30)
 
 ```
-Overall, host countries typically experience more success in their host years as compared to Olympics immediately prior. 
+
+Overall, host countries typically experience more success in their host years as compared to Olympics immediately prior.
 
 Below is a quick look at a factor that may contribute to host country success, athlete participation.
 
@@ -679,8 +699,6 @@ Below is a quick look at a factor that may contribute to host country success, a
 ### Athlete Participation
 
 Typically, host countries have additional athletes representing their country as compared to non-host years.[^2] This is due to the lower qualifications required for host country athletes as they are guaranteed a spot for each team sport.
-
-[^2]: More information about possible home field advantages at the Olympics: https://fivethirtyeight.com/features/is-there-home-field-advantage-at-the-olympics/#:\~:text=On%20average%2C%20there%20are%20175.8,spot%20in%20each%20team%20sport.
 
 #### Summer Olympics
 
@@ -847,7 +865,7 @@ winter_host_country_cols |>
 
 ```
 
-More specifically, in the pie charts below, we find that 88% of the time the host year athlete participation exceeded that of the previous year, while only 76% of the host year athlete counts exceeded that of the following year. 
+More specifically, in the pie charts below, we find that 88% of the time the host year athlete participation exceeded that of the previous year, while only 76% of the host year athlete counts exceeded that of the following year.
 
 ```{r, label = 'winter_olympics_host_more_athletes', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -929,7 +947,7 @@ grid.arrange(winter_before_host, winter_after_host, ncol = 2, top = "Comparison 
 
 ```
 
-So while a jump in athlete participation was more obvious for hosts of the Summer Olympics, the pattern is less evident for host countries in the Winter Olympics. Regardless, the increase in athlete participation from host countries as compared to other Olympic years is likely due to the lower barrier of entry for host nation athletes. While this doesn’t guarantee medals, it increases the likelihood of host countries earning medals as compared to other years. 
+So while a jump in athlete participation was more obvious for hosts of the Summer Olympics, the pattern is less evident for host countries in the Winter Olympics. Regardless, the increase in athlete participation from host countries as compared to other Olympic years is likely due to the lower barrier of entry for host nation athletes. While this doesn’t guarantee medals, it increases the likelihood of host countries earning medals as compared to other years.
 
 Let’s look at the correlation between total athletes competing versus the weighted total medal counts for the Olympics.
 
@@ -969,7 +987,6 @@ total_athletes_medals |>
 
 ```
 
-
 ```{r, label = 'correlation_matrix', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -988,9 +1005,10 @@ corr_matrix |>
 
 ```
 
-After a preliminary look at the historical Olympic athlete data, we found that typically host countries send more athletes during their host years. 
-
+After a preliminary look at the historical Olympic athlete data, we found that typically host countries send more athletes during their host years.
 :::
+
+[^2]: More information about possible home field advantages at the Olympics: https://fivethirtyeight.com/features/is-there-home-field-advantage-at-the-olympics/#:\~:text=On%20average%2C%20there%20are%20175.8,spot%20in%20each%20team%20sport.
 
 So far, we have found that typically host countries are performing better during their host years. To more confidently determine if the host country advantage phenomenon exists, we will conduct some statistical modeling below.
 
@@ -998,7 +1016,7 @@ So far, we have found that typically host countries are performing better during
 
 We will take several statistical models to evaluate the existence of the host country advantage. These methods allow us to more thoroughly assess whether the observed patterns are statistically significant or just a consequence of chance.
 
-First, we will employ classification models with `tidymodels`. More specifically, we will use the variables `year`, `country`, `season`, and `weighted_medal_count` to predict a country’s host status. 
+First, we will employ classification models with `tidymodels`. More specifically, we will use the variables `year`, `country`, `season`, and `weighted_medal_count` to predict a country’s host status.
 
 ```{r, label = 'data_cleaning', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1034,7 +1052,7 @@ medal_count_with_hosts <- olympic_medal_tally_history |>
 
 ### Logistic Regression
 
-First, we’ll fit the data into a logistic regression model. Below are the summary results of the logistic regression model. 
+First, we’ll fit the data into a logistic regression model. Below are the summary results of the logistic regression model.
 
 ```{r, label = 'logistic_regression_model', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1045,7 +1063,7 @@ lr_summary <- tidy(lr_fit)
 
 ```
 
-In this model summary, we will take a look at two values, the coefficient estimate and the p-value for the `weighted_total` variable. 
+In this model summary, we will take a look at two values, the coefficient estimate and the p-value for the `weighted_total` variable.
 
 ```{r, label = 'lr_summary_table', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1083,7 +1101,7 @@ Next, we will employ a random forest model to see if we get similar results for 
 
 ### Random Forest
 
-For our random forest model, we select the “best” model among several based on the area under the receiver-operating characteristic curve (ROC AUC). 
+For our random forest model, we select the “best” model among several based on the area under the receiver-operating characteristic curve (ROC AUC).
 
 ```{r, label = 'random_forest', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1182,7 +1200,8 @@ last_rf_fit |>
 
 
 ```
-In both classification models, we found the `weighted_total` variable as the best predictor for our host status models, indicating a *conditional correlation* between the weighted medal counts and host status even after taking various variables into account. 
+
+In both classification models, we found the `weighted_total` variable as the best predictor for our host status models, indicating a *conditional correlation* between the weighted medal counts and host status even after taking various variables into account.
 
 Classification models have limitations, one of which is that they are designed to predict outcomes rather than establish causality. In the future, I hope to incorporate additional variables and techniques to further explore the variable importance.
 
@@ -1458,6 +1477,7 @@ DT::datatable(setNames(time_series_winter_olympics, c("Year", "Host Country", "T
               options = list(pageLength = 10))
 
 ```
+
 Below is a scatter plot detailing these observations more visually. Most of these points lie above the y = x dashed line, indicating that most of these Olympics host nations performed better than they “should” have in the Olympics during their host year had it been on a “neutral” playing field. Despite having a couple of points (from the Winter Olympics) below our “baseline”, we still have good evidence that being the Olympics host country leads to more success in their weighted total medal count.
 
 ```{r, label = 'time_series_plot', message = FALSE, warning = FALSE}
@@ -1492,5 +1512,3 @@ Overall, in 92% of cases, the actual weighted totals exceeded the ARIMA projecti
 From the beginning of our analysis, we found a general visual trend that host countries typically sent more athletes and performed better during their host years. Through some additional statistical modeling, we found clearer evidence of a positive correlation and association between hosting status and weighted total medal counts.
 
 This analysis has some limitations, such as unaccounted variables within each host country that may also influence Olympic success (e.g., economic stability, athlete participation, athletic investment, etc.). Nevertheless, our analysis on the correlation between hosting the Olympics and more medal success cannot be ignored.
-
-
