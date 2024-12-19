@@ -363,9 +363,7 @@ As a unique aspect to our analysis, we will use a weighted total medal count met
 * **Bronze Medals**: 1
 
 $$
-
 total_w = (gold * 3) + (silver * 2) + (bronze * 1)
-
 $$
 
 Where,
@@ -470,7 +468,9 @@ leaflet() |>
 
 ```
 
-Below is an overview of the distribution of Olympic Games hosted by countries for the Summer and Winter Olympics. Since 1950, we find that Australia, Japan, and the United States have hosted the most Summer Olympics with two each. 
+From this map, we can observe that Innsbruck, Austria, Tokyo, Japan and Beijing, China are the only three cities to have hosted the Olympics twice. Innsbruck has hosted the Winter Olympics twice, while Tokyo has hosted the Summer Olympics twice. Beijing is the only city to have hosted the Winter Olympics and Summer Olympics.
+
+Shifting our focus from host cities to host countries, below is an overview of the distribution of Olympic Games hosted by countries for the Summer and Winter Olympics. Since 1950, we find that Australia, Japan, and the United States have hosted the most Summer Olympics with two each. 
 
 ```{r, label = 'summer_host_summary_data_table', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -935,7 +935,7 @@ Let’s look at the correlation between total athletes competing versus the weig
 
 ### Correlation: Athlete Participation vs Weighted Medal Counts
 
-From these visuals, we find that athlete participation and weighted medal total have a strong, positive correlation (`r=0.78`). The correlation between the variables highlights the potential importance of athlete participation in driving overall medal success.
+From these visuals, we find that athlete participation and weighted medal total have a strong, positive correlation (`r=0.74`). The correlation between the variables highlights the potential importance of athlete participation in driving overall medal success.
 
 ```{r, label = 'athlete_and_medal_data', message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -1077,7 +1077,7 @@ model_p_value <- lr_summary |>
 
 ```
 
-Ultimately, the coefficient estimate for the `weighted_total` variable is `{r} round(model_coefficient, 5)`. Although this is a small value, since it is a **positive** value, this coefficient indicates that countries have a higher weighted medal count during host years. Despite inputting over 150 variables into our model, the `weighted_total` variable still remains among the most significant with the smallest p-value of `{r} round(model_p_value, 5)`. This indicates a convincing correlation between weighted total medal count and host country status not due to chance.
+Ultimately, the coefficient estimate for the `weighted_total` variable is `{r} round(model_coefficient, 5)`. Although this is a small value, since it is a **positive** value, this coefficient indicates that countries have a higher weighted medal count during host years. Despite inputting over 150 variables into our model, the `weighted_total` variable still remains among the most significant with the smallest p-value of `{r} format(round(model_p_value, 5), scientific = FALSE)`. This indicates a convincing correlation between weighted total medal count and host country status not due to chance.
 
 Next, we will employ a random forest model to see if we get similar results for the `weighted_total` variable.
 
@@ -1296,6 +1296,34 @@ time_series_summer_olympics <- time_series_summer_olympics |>
 
 ```
 
+```{r, echo = FALSE, label = 'ts_summer_percent_change', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+summer_avg_percent_diff <- time_series_summer_olympics |>
+  mutate(percent_diff = case_when(
+    forecasted == 0 ~ NA,
+    .default = round((difference/forecasted) * 100, 2)
+  )) |>
+  drop_na() |>
+  summarize(avg = round(mean(percent_diff), 2)) |>
+  pull(avg)
+
+```
+
+Taking a look at the Summer Olympics table, we find that in every instance, the host country has exceeded the ARIMA model projection with a higher actual medal count during their host year. On average, these summer hosts have a `{r} summer_avg_percent_diff`% higher weighted medal count than projected.
+
+```{r, label = 'ts_summer_table', message = FALSE, warning = FALSE}
+#| code-fold: true
+
+DT::datatable(setNames(time_series_summer_olympics, c("Year", "Host Country", "Time Series Forecast", "Actual Weighted Medal Count", "Difference in Count")), 
+              caption = "Table 4: Time Series Projection for Summer Olympic Hosts",
+              rownames = FALSE,
+              options = list(pageLength = 10))
+
+```
+
+#### Winter Olympics
+
 ```{r, label = 'ts_winter_data_prep', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -1405,35 +1433,6 @@ time_series_winter_olympics <- time_series_winter_olympics |>
 
 ```
 
-
-
-```{r, echo = FALSE, label = 'ts_summer_percent_change', message = FALSE, warning = FALSE}
-#| code-fold: true
-
-summer_avg_percent_diff <- time_series_summer_olympics |>
-  mutate(percent_diff = case_when(
-    forecasted == 0 ~ NA,
-    .default = round((difference/forecasted) * 100, 2)
-  )) |>
-  drop_na() |>
-  summarize(avg = round(mean(percent_diff), 2)) |>
-  pull(avg)
-
-```
-
-Taking a look at the Summer Olympics table, we find that in every instance, the host country has exceeded the ARIMA model projection with a higher actual medal count during their host year. On average, these summer hosts have a `{r} summer_avg_percent_diff`% higher weighted medal count than projected.
-
-```{r, label = 'ts_summer_table', message = FALSE, warning = FALSE}
-#| code-fold: true
-
-DT::datatable(setNames(time_series_summer_olympics, c("Year", "Host Country", "Time Series Forecast", "Actual Weighted Medal Count", "Difference in Count")), 
-              caption = "Table 4: Time Series Projection for Summer Olympic Hosts",
-              rownames = FALSE,
-              options = list(pageLength = 10))
-
-```
-#### Winter Olympics
-
 ```{r, echo = FALSE, label = 'ts_winter_percent_change', message = FALSE, warning = FALSE}
 #| code-fold: true
 
@@ -1485,6 +1484,7 @@ time_series_combined |>
   theme_bw()
 
 ```
+
 Overall, in 92% of cases, the actual weighted totals exceeded the ARIMA projections, providing us with evidence that there is some positive “host effect” on the country’s weighted total medal counts.
 
 ## Conclusion
